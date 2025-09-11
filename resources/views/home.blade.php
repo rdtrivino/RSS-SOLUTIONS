@@ -53,7 +53,7 @@
         <div class="hidden md:flex items-center gap-2">
           <button @click="openTracking = true"
                   class="px-3 py-2 rounded-lg font-semibold text-blue-900 bg-yellow-400 hover:brightness-105 active:scale-[.98] transition">
-            Consultar referencia
+            Consultar Ticket
           </button>
 
           @guest
@@ -101,7 +101,7 @@
 
           <button @click="openTracking = true; openMenu=false"
                   class="px-3 py-2 rounded-lg font-semibold text-blue-900 bg-yellow-400 hover:brightness-105">
-            Consultar referencia
+            Consultar ticket
           </button>
 
           @guest
@@ -155,7 +155,7 @@
                                 <div class="mt-6 flex flex-wrap gap-3">
                                     <button @click="openTracking = true"
                                             class="inline-flex items-center gap-2 bg-white/95 text-blue-900 px-6 py-3 rounded-xl font-semibold shadow hover:bg-white active:scale-[.98] transition">
-                                        Consultar referencia
+                                        Consultar ticket
                                     </button>
                                 </div>
                             </div>
@@ -487,7 +487,7 @@
                 <p class="text-gray-600">Ingresa el código entregado al dejar tu equipo (ej: RS-ABC123).</p>
 
                 <div>
-                    <label for="tracking_code" class="block text-sm font-medium text-gray-700">Código de referencia</label>
+                    <label for="tracking_code" class="block text-sm font-medium text-gray-700">Código de ticket</label>
                     <input id="tracking_code" name="code" required
                            class="mt-1 w-full rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500"
                            placeholder="RS-ABC123">
@@ -594,7 +594,7 @@
                 </span>
                 <div>
                   <p class="font-semibold text-gray-900">Seguimiento de equipos</p>
-                  <p class="text-sm text-gray-600">Usa <em>Consultar referencia</em> para ver el estado.</p>
+                  <p class="text-sm text-gray-600">Usa <em>Consultar ticket</em> para ver el estado.</p>
                 </div>
               </li>
             </ul>
@@ -608,8 +608,8 @@
               <ol class="mt-3 space-y-2 text-sm text-gray-700 list-decimal list-inside">
                 <li>Regístrate y accede a tu panel.</li>
                 <li>Genera una orden de servicio o registra tu equipo.</li>
-                <li>Recibe tu <b>código de referencia</b> (ej: RS-ABC123).</li>
-                <li>Consulta avances en <em>Mi panel</em> o con “Consultar referencia”.</li>
+                <li>Recibe tu <b>código de ticket</b> (ej: RS-ABC123).</li>
+                <li>Consulta avances en <em>Mi panel</em> o con “Consultar ticket”.</li>
                 <li>Recibe notificaciones por email/WhatsApp cuando haya actualizaciones.</li>
               </ol>
             </details>

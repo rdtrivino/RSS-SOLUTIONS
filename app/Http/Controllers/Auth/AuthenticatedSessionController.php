@@ -25,9 +25,21 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
-
         $request->session()->regenerate();
 
+        $user = $request->user();
+
+        if ($user->hasRole('admin')) {
+            // Panel de Filament para administradores
+            return redirect()->intended('/admin');
+        }
+
+        if ($user->hasRole('empleado')) {
+            // Panel de Filament para empleados (crea el panel /staff si aún no existe)
+            return redirect()->intended('/staff');
+        }
+
+        // Usuarios normales → dashboard de Breeze
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
