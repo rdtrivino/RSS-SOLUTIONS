@@ -22,7 +22,7 @@
                  {{-- Aviso de costo --}}
                 <div class="mb-4 rounded-lg bg-yellow-50 border border-yellow-200 p-3">
                     <p class="text-sm text-yellow-800 font-medium">
-                        ⚠️ Cualquier revisión tiene un costo de $30.000
+                        ⚠️ Cualquier revisión tiene un costo de 30.000 COP.
                     </p>
                 </div>
                 <form wire:submit.prevent="save" class="space-y-6">
@@ -36,10 +36,15 @@
                     {{-- Descripción --}}
                     <div>
                         <label class="mb-1 block text-sm font-medium text-gray-700">Descripción</label>
-                        <textarea rows="4" wire:model.defer="descripcion" class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"></textarea>
-                        @error('descripcion') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        <textarea 
+                            rows="4" 
+                            wire:model.defer="descripcion" 
+                            class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            placeholder="Describir las fallas presentadas, incluir marca, serial y cualquier detalle adicional..."></textarea>
+                        @error('descripcion') 
+                            <span class="text-sm text-red-600">{{ $message }}</span> 
+                        @enderror
                     </div>
-
                     {{-- Grid de campos adicionales --}}
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         {{-- Prioridad --}}

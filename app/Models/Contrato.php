@@ -10,23 +10,25 @@ class Contrato extends Model
 {
     use HasFactory;
 
+    // Campos que se pueden asignar de forma masiva
     protected $fillable = [
         'nombre',
         'email',
-        'celular',      // agregado
+        'celular',
         'empresa',
-        'nit',          // agregado
+        'nit',
         'servicio',
-        'especificar',  // agregado
+        'especificar',
         'mensaje',
         'estado',
     ];
 
     /**
-     * Radicado asociado al contrato (relación polimórfica).
+     * Relación polimórfica con Radicado (si lo usas).
      */
     public function radicado(): MorphOne
     {
         return $this->morphOne(Radicado::class, 'radicable');
     }
 }
+

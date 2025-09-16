@@ -18,8 +18,9 @@
 
     <style>
         html{ scroll-behavior:smooth; }
-        /* opcional: trazo un poco más grueso a los iconos */
         [data-lucide]{ stroke-width:2.1; }
+        /* Oculta elementos con x-cloak hasta que Alpine monte */
+        [x-cloak]{ display:none !important; }
     </style>
 </head>
 <body id="top"
@@ -196,34 +197,15 @@
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
             @foreach([
-                [
-                    'title'=>'Soporte Técnico',
-                    'desc'=>'Diagnóstico, reparación y mantenimiento de equipos.',
-                    'icon'=>'wrench'          // 🔧
-                ],
-                [
-                    'title'=>'Redes',
-                    'desc'=>'Cableado, Wi-Fi, VPN, firewall y seguridad perimetral.',
-                    'icon'=>'wifi'            // 📶
-                ],
-                [
-                    'title'=>'Mesa de Ayuda',
-                    'desc'=>'Tickets, SLA, inventario, soporte remoto y onsite.',
-                    'icon'=>'life-buoy'       // 🛟
-                ],
-                [
-                    'title'=>'Soluciones TI',
-                    'desc'=>'Automatización, backups, cloud y desarrollo a medida.',
-                    'icon'=>'cpu'             // 🖥️
-                ],
+                ['title'=>'Soporte Técnico','desc'=>'Diagnóstico, reparación y mantenimiento de equipos.','icon'=>'wrench'],
+                ['title'=>'Redes','desc'=>'Cableado, Wi-Fi, VPN, firewall y seguridad perimetral.','icon'=>'wifi'],
+                ['title'=>'Mesa de Ayuda','desc'=>'Tickets, SLA, inventario, soporte remoto y onsite.','icon'=>'life-buoy'],
+                ['title'=>'Soluciones TI','desc'=>'Automatización, backups, cloud y desarrollo a medida.','icon'=>'cpu'],
             ] as $s)
                 <div class="bg-white/70 backdrop-blur rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition p-6 flex flex-col items-center text-center">
-                    {{-- Icono --}}
                     <div class="mb-4 p-3 rounded-xl bg-blue-50 text-blue-600">
                         <i data-lucide="{{ $s['icon'] }}" class="w-10 h-10"></i>
                     </div>
-
-                    {{-- Título y descripción --}}
                     <h4 class="font-bold text-xl mb-2">{{ $s['title'] }}</h4>
                     <p class="text-gray-600">{{ $s['desc'] }}</p>
                 </div>
@@ -245,7 +227,6 @@
         </h3>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-
         {{-- MISIÓN --}}
         <article class="group rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition bg-white">
             <div class="p-6">
@@ -279,11 +260,9 @@
         {{-- LOGO + IDENTIDAD --}}
         <article class="group rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition bg-white">
         <div class="p-6 flex flex-col items-center text-center">
-            {{-- Logo grande --}}
             <img src="{{ asset('images/logo.jpg') }}"
                 alt="RSS Solutions"
                 class="w-48 h-48 md:w-56 md:h-56 rounded-2xl ring-1 ring-gray-200 shadow mb-6 object-contain">
-            {{-- Valores pequeños debajo --}}
             <div class="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm text-gray-500">
             <span class="inline-flex items-center gap-1">
                 <i data-lucide="shield-check" class="w-4 h-4"></i> Calidad
@@ -308,8 +287,6 @@
     </h3>
 
     @php
-        // Si ya tienes $posts del controlador, lo usamos,
-        // pero SIEMPRE vamos a forzar los covers locales abajo.
         if (!isset($posts)) {
             $posts = [
                 ['title'=>'5 tips para acelerar tu PC', 'excerpt'=>'Limpieza, SSD, RAM y prácticas rápidas…', 'url'=>'#'],
@@ -318,14 +295,12 @@
             ];
         }
 
-        // Definimos TUS imágenes locales (con cache-busting por filemtime):
         $localCovers = [
             'images/premium_photo-1664301923554-fa1023546fd8.avif',
             'images/premium_photo-1676618539987-12b7c8a8ae61.avif',
             'images/premium_photo-1661373049672-3bae68ac5681.avif',
         ];
 
-        // Función helper para generar URL con ?v=mtime
         $coverUrl = function($path) {
             $full = public_path($path);
             $v = file_exists($full) ? filemtime($full) : time();
@@ -336,13 +311,11 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         @foreach($posts as $p)
         @php
-            // Tomamos el cover según el índice del loop (ignora cualquier $p['cover'] que venga)
             $idx = $loop->index % count($localCovers);
             $forcedCover = $coverUrl($localCovers[$idx]);
         @endphp
 
         <article class="group bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition">
-            {{-- AVIF fallback (opcional) --}}
             @if(Str::endsWith($localCovers[$idx], '.avif'))
             <picture>
                 <source srcset="{{ $forcedCover }}" type="image/avif">
@@ -383,34 +356,19 @@
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6 items-center">
             @foreach([
-                [
-                    'label'=>'Cisco Intro Cybersecurity',
-                    'img'=>asset('images/introduction_to_cybersecurity_16.png') // Logo oficial Cisco
-                ],
-                [
-                    'label'=>'Fortinet NSE 1-3',
-                    'img'=>asset('images/NSE1-Certification.png') // Logo NSE Fortinet
-                ],
-                [
-                    'label'=>'AWS Cloud Essentials',
-                    'img'=>asset('images/cloud-essentials.png') // Logo AWS Cloud
-                ],
-                [
-                    'label'=>'Laravel Pro',
-                    'img'=>asset('images/Laravel.svg.png') // Logo Laravel
-                ],
+                ['label'=>'Cisco Intro Cybersecurity','img'=>asset('images/introduction_to_cybersecurity_16.png')],
+                ['label'=>'Fortinet NSE 1-3','img'=>asset('images/NSE1-Certification.png')],
+                ['label'=>'AWS Cloud Essentials','img'=>asset('images/cloud-essentials.png')],
+                ['label'=>'Laravel Pro','img'=>asset('images/Laravel.svg.png')],
             ] as $b)
             <div class="bg-white/70 backdrop-blur rounded-2xl border border-gray-100 p-6 text-center shadow-sm hover:shadow-md transition">
-                <img src="{{ $b['img'] }}"
-                     alt="{{ $b['label'] }}"
-                     class="h-16 mx-auto mb-3 object-contain">
+                <img src="{{ $b['img'] }}" alt="{{ $b['label'] }}" class="h-16 mx-auto mb-3 object-contain">
                 <div class="text-sm font-medium text-gray-700">{{ $b['label'] }}</div>
             </div>
             @endforeach
         </div>
     </div>
 </section>
-
 
     {{-- FOOTER (azul oscuro) --}}
     <footer class="bg-blue-900 text-white">
@@ -420,7 +378,7 @@
       </div>
     </footer>
 
-    {{-- BOTÓN FLOTANTE: CHAT (arriba) --}}
+    {{-- BOTÓN FLOTANTE: CHAT --}}
     <button @click="openChat = true"
       class="fixed bottom-36 right-5 z-[55] rounded-full shadow-lg p-4 bg-indigo-600 text-white hover:bg-indigo-500 active:scale-[.98] transition"
       aria-label="Chat">
@@ -429,13 +387,13 @@
       </svg>
     </button>
 
-    {{-- BOTÓN FLOTANTE: WHATSAPP (medio) --}}
+    {{-- BOTÓN FLOTANTE: WHATSAPP --}}
     <a href="https://wa.me/{{ env('WHATSAPP_NUMBER','573001112233') }}?text=Hola%20RSS%20Solutions,%20necesito%20soporte%20por%20favor."
        target="_blank"
        class="fixed bottom-20 right-5 z-[55] rounded-full shadow-lg p-4 bg-green-500 text-white hover:bg-green-600 active:scale-[.98] transition"
        aria-label="WhatsApp">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M20.52 3.48A11.94 11.94 0 0 0 12.01 0C5.39 0 .03 5.37.03 12c0 2.1.55 4.16 1.6 5.98L0 24l6.2-1.62A12.02 12.02 0 0 0 12.01 24c6.63 0 12-5.37 12-12 0-3.2-1.25-6.21-3.49-8.52h0zM12.01 22c-1.94 0-3.84-.5-5.5-1.46l-.39-.23-3.68.96.98-3.58-.25-.37A10.04 10.04 0 1 1 22.02 12c0 5.53-4.49 10-10.01 10zm5.63-7.5c-.31-.16-1.84-.9-2.12-.99-.28-.1-.49-.16-.7.16s-.81.99-.99 1.2-.37.24-.68.08c-.31-.16-1.31-.48-2.5-1.52-.92-.82-1.54-1.84-1.72-2.15-.18-.31-.02-.48.14-.64.14-.14.31-.37.47-.55.16-.18.21-.31.31-.52.1-.21.05-.39-.03-.55-.08-.16-.7-1.68-.96-2.31-.25-.6-.5-.52-.7-.53h-.6c-.21 0-.55.08-.84.39s-1.11 1.09-1.11 2.66 1.14 3.09 1.3 3.3c.16.21 2.24 3.42 5.43 4.79.76.33 1.35.52 1.81.67.76.24 1.45.21 2 .13.61-.09 1.84-.75 2.1-1.47.26-.72.26-1.34.18-1.47-.08-.13-.29-.21-.6-.37z"/>
+            <path d="M20.52 3.48A11.94 11.94 0 0 0 12.01 0C5.39 0 .03 5.37.03 12c0 2.1.55 4.16 1.6 5.98L0 24l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM12.01 22c-1.94 0-3.84-.5-5.5-1.46l-.39-.23-3.68.96.98-3.58-.25-.37A10.04 10.04 0 1 1 22.02 12c0 5.53-4.49 10-10.01 10zm5.63-7.5c-.31-.16-1.84-.9-2.12-.99-.28-.1-.49-.16-.7.16s-.81.99-.99 1.2-.37.24-.68.08c-.31-.16-1.31-.48-2.5-1.52-.92-.82-1.54-1.84-1.72-2.15-.18-.31-.02-.48.14-.64.14-.14.31-.37.47-.55.16-.18.21-.31.31-.52.1-.21.05-.39-.03-.55-.08-.16-.7-1.68-.96-2.31-.25-.6-.5-.52-.7-.53h-.6c-.21 0-.55.08-.84.39s-1.11 1.09-1.11 2.66 1.14 3.09 1.3 3.3c.16.21 2.24 3.42 5.43 4.79.76.33 1.35.52 1.81.67.76.24 1.45.21 2 .13.61-.09 1.84-.75 2.1-1.47.26-.72.26-1.34.18-1.47-.08-.13-.29-.21-.6-.37z"/>
         </svg>
     </a>
 
@@ -470,43 +428,111 @@
     </div>
 
     {{-- MODAL: Consultar referencia --}}
-    <div x-show="openTracking"
-         x-transition.opacity
-         @keydown.escape.window="openTracking=false"
-         class="fixed inset-0 z-[60] flex items-center justify-center p-4"
-         style="display:none">
+    <!-- Importante: aquí NO redefinimos openTracking -->
+    <div
+      x-show="openTracking"
+      x-transition.opacity
+      @keydown.escape.window="openTracking=false"
+      class="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      x-cloak
+      style="display:none">
+
         <div class="absolute inset-0 bg-black/50" @click="openTracking=false"></div>
 
-        <div class="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-black/5">
+        <!-- Aquí sí usamos x-data, pero solo para el estado interno (code, loading, etc.) -->
+        <div class="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-black/5"
+             x-data="trackingState('{{ route('tracking.lookup') }}')">
             <div class="px-6 py-5 border-b bg-gradient-to-r from-blue-600 to-blue-500 text-white flex items-center justify-between">
                 <h3 class="text-lg md:text-xl font-bold">Consultar mi referencia</h3>
                 <button class="text-white/90 hover:text-white" @click="openTracking=false" aria-label="Cerrar">✕</button>
             </div>
 
-            <form action="{{ route('tracking.lookup') }}" method="GET" class="p-6 space-y-4">
+            <form @submit.prevent="consultar" class="p-6 space-y-4">
                 <p class="text-gray-600">Ingresa el código entregado al dejar tu equipo (ej: RS-ABC123).</p>
 
                 <div>
                     <label for="tracking_code" class="block text-sm font-medium text-gray-700">Código de ticket</label>
-                    <input id="tracking_code" name="code" required
+                    <input id="tracking_code" name="code" x-model="code" required
                            class="mt-1 w-full rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500"
                            placeholder="RS-ABC123">
                 </div>
 
-                @if(session('tracking_error'))
-                    <div class="text-red-600 text-sm">{{ session('tracking_error') }}</div>
-                @endif
+                <template x-if="error">
+                    <div class="text-red-600 text-sm" x-text="error"></div>
+                </template>
+
+                <div x-show="resultado" x-cloak class="mt-3 rounded-xl border border-gray-200 p-4 bg-gray-50">
+                    <h4 class="font-semibold text-gray-800 mb-2">Resultado</h4>
+                    <dl class="grid grid-cols-2 gap-2 text-sm">
+                        <dt class="text-gray-500">Código</dt>
+                        <dd class="font-medium" x-text="resultado.codigo"></dd>
+
+                        <dt class="text-gray-500">Módulo</dt>
+                        <dd class="font-medium" x-text="capitalize(resultado.modulo)"></dd>
+
+                        <dt class="text-gray-500">Estado</dt>
+                        <dd class="font-medium" x-text="resultado.estado ?? '—'"></dd>
+                    </dl>
+                </div>
 
                 <div class="flex items-center justify-end gap-3 pt-2">
                     <button type="button" @click="openTracking=false"
                             class="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50">Cancelar</button>
-                    <button class="px-5 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-500 active:scale-[.98] transition">
-                        Consultar
+                    <button type="submit"
+                            class="px-5 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-500"
+                            :disabled="loading">
+                        <span x-show="!loading">Consultar</span>
+                        <span x-show="loading">Consultando...</span>
                     </button>
                 </div>
             </form>
         </div>
     </div>
+
+    <script>
+    // Estado interno del modal (NO redefine openTracking)
+    function trackingState(lookupUrl) {
+        return {
+            code: '',
+            loading: false,
+            error: '',
+            resultado: null,
+
+            async consultar() {
+                this.error = '';
+                this.resultado = null;
+
+                if (!this.code.trim()) {
+                    this.error = 'Debes ingresar un código de ticket.';
+                    return;
+                }
+
+                this.loading = true;
+                try {
+                    const res = await fetch(`${lookupUrl}?code=${encodeURIComponent(this.code)}`, {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    const data = await res.json();
+
+                    if (!res.ok || !data.ok) {
+                        this.error = data.message ?? 'No encontramos ningún ticket con ese código.';
+                    } else {
+                        this.resultado = data.data;
+                    }
+                } catch (e) {
+                    this.error = 'Ocurrió un error al consultar.';
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            capitalize(txt) {
+                if (!txt) return '';
+                return txt.charAt(0).toUpperCase() + txt.slice(1);
+            }
+        }
+    }
+    </script>
 
     {{-- MODAL: Información al abrir --}}
     <div x-show="openInfo"
@@ -517,16 +543,13 @@
       <div class="absolute inset-0 bg-black/50" @click="openInfo=false"></div>
 
       <div class="relative w-full max-w-xl">
-        <!-- Deco blur circles -->
         <div class="absolute -top-16 -left-16 h-40 w-40 rounded-full bg-blue-500/20 blur-2xl"></div>
         <div class="absolute -bottom-12 -right-12 h-44 w-44 rounded-full bg-indigo-500/20 blur-2xl"></div>
 
         <div class="relative bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-black/5 overflow-hidden">
-          <!-- Header -->
           <div class="px-6 py-5 bg-gradient-to-r from-blue-700 to-indigo-600 text-white flex items-center justify-between">
             <div class="flex items-center gap-3">
               <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 ring-1 ring-white/30">
-                <!-- Icon -->
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -537,11 +560,9 @@
                 <h3 class="text-lg md:text-xl font-bold">Bienvenido a RSS Solutions</h3>
               </div>
             </div>
-
             <button class="text-white/90 hover:text-white" @click="openInfo=false" aria-label="Cerrar">✕</button>
           </div>
 
-          <!-- Body -->
           <div class="p-6">
             <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-amber-100 text-amber-800 px-3 py-1 text-xs font-semibold ring-1 ring-amber-200">
               <span class="h-2 w-2 rounded-full bg-amber-500"></span> Novedad
@@ -551,7 +572,6 @@
               Ya puedes <a href="#contacto" class="text-blue-700 hover:underline font-medium">solicitar soporte</a> desde el chat o el formulario.
             </p>
 
-            {{-- Invitación a registrarse --}}
             <div class="mb-5 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
               <p class="text-sm text-blue-900">
                 ¿Necesitas <b>solicitar cualquier servicio</b> y llevar una <b>guía de seguimiento</b> de tus equipos y tickets?
@@ -588,7 +608,7 @@
               </li>
               <li class="flex items-start gap-3">
                 <span class="mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">
-                  <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <svg class="h-3.5 w-3.5" viewBox="0 0 24 24  fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 12l2 2 4-4"/>
                   </svg>
                 </span>
@@ -599,7 +619,6 @@
               </li>
             </ul>
 
-            {{-- Guía de seguimiento (plegable) --}}
             <details class="mt-5 group rounded-2xl border border-gray-200 bg-white/70 px-4 py-3 open:ring-1 open:ring-gray-200">
               <summary class="cursor-pointer select-none list-none font-semibold text-gray-900 flex items-center justify-between">
                 Guía rápida de seguimiento
@@ -615,7 +634,6 @@
             </details>
           </div>
 
-          <!-- Footer / CTAs -->
           <div class="px-6 pb-6 flex items-center justify-end gap-3">
             <button @click="openInfo=false" class="px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50">
               Cerrar
@@ -640,7 +658,6 @@
             navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
         });
 
-        // Renderizar iconos Lucide cuando el DOM y Alpine estén listos
         document.addEventListener('DOMContentLoaded', () => {
           if (window.lucide && typeof window.lucide.createIcons === 'function') {
             lucide.createIcons();

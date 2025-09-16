@@ -5,134 +5,123 @@ namespace App\Livewire;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use App\Models\Contrato;
 use App\Models\Radicado;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
 
-#[Layout('layouts.app')]        // resources/views/layouts/app.blade.php
+#[Layout('layouts.app')]
 #[Title('Contrátanos')]
 class ContratanosPage extends Component
 {
     // Campos del formulario
-    public string $nombre   = '';
-    public string $email    = '';
-    public string $celular  = '';
-    public string $empresa  = '';
-    public string $nit      = '';
+    public string $nombre = '';
+    public string $email = '';
+    public string $celular = '';
+    public string $empresa = '';
+    public string $nit = '';
     public string $servicio = '';
-    public string $mensaje  = '';
-    public string $estado   = 'pendiente';
+    public string $especificar = '';
+    public string $mensaje = '';
+    public string $estado = 'pendiente';
 
-    // UI/Feedback
+    // UI / feedback
     public string $flash = '';
-    public ?Radicado $ultimoRadicado = null; // para mostrar badge y botón copiar
+    public ?Radicado $ultimoRadicado = null;
 
-    // Catálogo para <select>
+    // Panel derecho (resumen global + recientes)
+    public array $stats = ['total' => 0, 'pendientes' => 0, 'cerrados' => 0];
+    public $solicitudes = [];
+
+    // Catálogo
     public array $servicios = [
         'Desarrollo Web',
         'Soporte y Mantenimiento',
         'Integraciones (APIs)',
         'Automatizaciones / RPA',
         'Consultoría',
-        'Otro',
     ];
 
     protected function rules(): array
     {
         return [
-            'nombre'   => ['required','string','min:3','max:150'],
-            'email'    => ['required','email','max:150'],
-            'celular'  => ['nullable','string','max:50'],
-            'empresa'  => ['nullable','string','max:150'],
-            'nit'      => ['nullable','string','max:50'],
-            'servicio' => ['required','string','max:150'],
-            'mensaje'  => ['nullable','string','max:5000'],
-            'estado'   => ['in:pendiente,contactado,cerrado'],
+            'nombre'       => ['required','string','min:3','max:120'],
+            'email'        => ['required','email','max:150'],
+            'celular'      => ['nullable','string','max:20'],
+            'empresa'      => ['nullable','string','max:150'],
+            'nit'          => ['nullable','string','max:30'],
+            'servicio'     => ['required','string','in:Desarrollo Web,Soporte y Mantenimiento,Integraciones (APIs),Automatizaciones / RPA,Consultoría'],
+            'especificar'  => ['required','string','max:150'], // <-- ahora obligatorio
+            'mensaje'      => ['nullable','string','max:2000'],
+            'estado'       => ['required','string','in:pendiente,en_proceso,cerrado'],
         ];
     }
-
-    protected function messages(): array
+    public function mount(): void
     {
-        return [
-            'nombre.required'   => 'El nombre es obligatorio.',
-            'nombre.min'        => 'El nombre debe tener al menos :min caracteres.',
-            'email.required'    => 'El correo electrónico es obligatorio.',
-            'email.email'       => 'El correo electrónico no tiene un formato válido.',
-            'servicio.required' => 'Selecciona o escribe el servicio que necesitas.',
-            'estado.in'         => 'El estado seleccionado no es válido.',
-        ];
+        // Cargar panel GLOBAL (sin filtrar por sesión ni email)
+        $this->cargarPanel();
+    }
+
+    public function updatedServicio(): void
+    {
+        if ($this->servicio !== 'Otro') {
+            $this->especificar = '';
+        }
     }
 
     public function save(): void
     {
         $this->validate();
 
-        $numeroRadicado = null;
+        $servicioFinal = $this->servicio === 'Otro'
+            ? trim("Otro: {$this->especificar}")
+            : $this->servicio;
 
-        DB::transaction(function () use (&$numeroRadicado) {
-            // 1) Crear contrato
+        DB::transaction(function () use ($servicioFinal) {
             $contrato = Contrato::create([
-                'nombre'   => $this->nombre,
-                'email'    => $this->email,
-                'celular'  => $this->celular,
-                'empresa'  => $this->empresa,
-                'nit'      => $this->nit,
-                'servicio' => $this->servicio,
-                'mensaje'  => $this->mensaje,
-                'estado'   => $this->estado,
+                'nombre'       => $this->nombre,
+                'email'        => $this->email,
+                'celular'      => $this->celular,
+                'empresa'      => $this->empresa,
+                'nit'          => $this->nit,
+                'servicio'     => $this->servicio,
+                'especificar'  => $this->especificar, // siempre se guarda
+                'mensaje'      => $this->mensaje,
+                'estado'       => $this->estado,
             ]);
+            // Generar radicado tipo "CON-YYYY-ABC123"
+            $numero = sprintf('CON-%s-%s', now()->format('Y'), Str::upper(Str::random(6)));
 
-            // 2) Generar número de radicado único
-            $numeroRadicado = $this->generarNumeroRadicadoUnico();
-
-            // 3) Crear radicado polimórfico y conservarlo para la vista
             $this->ultimoRadicado = $contrato->radicado()->create([
-                'numero'  => $numeroRadicado,
+                'numero'  => $numero,
                 'modulo'  => 'contrato',
-                'user_id' => auth()->id(), // null si no autenticado
+                'user_id' => auth()->id(), // puede ser null
             ]);
         });
 
-        // 4) Limpiar formulario y restaurar estado
-        $this->reset(['nombre','email','celular','empresa','nit','servicio','mensaje']);
+        // Refrescar panel GLOBAL (totales + últimos 8)
+        $this->cargarPanel();
+
+        // Limpiar campos (dejamos estado en pendiente)
+        $this->reset(['celular','empresa','nit','servicio','especificar','mensaje']);
         $this->estado = 'pendiente';
 
-        // 5) Flash con número de radicado
-        $this->flash = "¡Tu solicitud fue radicada correctamente! Número de radicado: {$numeroRadicado}.";
+        $this->flash = '¡Tu solicitud fue radicada correctamente!';
     }
 
-    private function generarNumeroRadicadoUnico(): string
+    private function cargarPanel(): void
     {
-        do {
-            // Formato: CON-YYYY-XXXXXX
-            $numero = 'CON-' . date('Y') . '-' . strtoupper(Str::random(6));
-            $existe = Radicado::where('numero', $numero)->exists();
-        } while ($existe);
+        // === Totales GLOBALes (toda la tabla) ===
+        $this->stats['total']      = Contrato::count();
+        $this->stats['pendientes'] = Contrato::where('estado', 'pendiente')->count();
+        $this->stats['cerrados']   = Contrato::where('estado', 'cerrado')->count();
 
-        return $numero;
+        // === Recientes: últimos 8 GLOBALes ===
+        $this->solicitudes = Contrato::latest()->take(8)->get();
     }
 
     public function render()
     {
-        // Stats para panel derecho (evita Undefined variable $stats)
-        $stats = [
-            'total'       => Contrato::count(),
-            'pendientes'  => Contrato::where('estado', 'pendiente')->count(),
-            'cerrados'    => Contrato::where('estado', 'cerrado')->count(),
-        ];
-
-        // Últimos 8 radicados del módulo contrato
-        $radicados = Radicado::with('radicable')
-            ->where('modulo', 'contrato')
-            ->orderByDesc('created_at')
-            ->take(8)
-            ->get();
-
-        return view('livewire.contratanos-page', [
-            'stats'          => $stats,
-            'radicados'      => $radicados,
-            'ultimoRadicado' => $this->ultimoRadicado,
-        ]);
+        return view('livewire.contratanos-page');
     }
 }

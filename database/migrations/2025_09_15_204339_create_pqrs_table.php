@@ -14,7 +14,7 @@ return new class extends Migration
             // Si el usuario logueado radica la PQR; puede ser anónimo
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
 
-            $table->enum('tipo', ['peticion', 'queja', 'reclamo']);
+            $table->enum('tipo', ['peticion', 'queja', 'reclamo','sugerencia', 'felicitacion']);
             $table->text('descripcion');
 
             // Flujo/estado

@@ -1,235 +1,186 @@
-<div
-    x-data="{
-        toast: { show:false, msg:'' },
-        copy(txt){ navigator.clipboard.writeText(txt); this.toast.msg='Copiado al portapapeles'; this.toast.show=true; setTimeout(()=>this.toast.show=false, 1400) },
-        otro:false
-    }"
-    x-init="
-        (() => {
-            const catálogo = @js($servicios);
-            const actual   = @js($servicio ?? '');
-            if (actual && !catálogo.includes(actual)) { otro = true }
-        })()
-    "
-    class="min-h-[80vh] bg-gradient-to-br from-indigo-50 via-white to-sky-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950"
->
-    {{-- Toast flotante --}}
-    <div
-        x-show="toast.show" x-transition
-        class="fixed top-4 right-4 z-50 rounded-xl backdrop-blur bg-gray-900/90 text-white px-4 py-2 shadow-2xl"
-        style="display:none" x-text="toast.msg">
-    </div>
-
-    {{-- Hero / encabezado --}}
-    <section class="relative">
-        <div class="absolute inset-0 -z-10 overflow-hidden">
-            <div class="absolute -top-24 -left-20 h-64 w-64 rounded-full bg-indigo-200/60 blur-3xl"></div>
-            <div class="absolute -bottom-24 -right-20 h-64 w-64 rounded-full bg-sky-200/60 blur-3xl"></div>
+<div class="mx-auto max-w-6xl p-4 md:p-6">
+    {{-- Notificación de éxito --}}
+    @if ($flash)
+        <div class="mb-4 flex items-center gap-3 rounded-lg border-l-4 border-green-700 bg-green-100 p-4 text-green-800 shadow">
+            <svg class="h-5 w-5 flex-shrink-0 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span class="font-medium">{{ $flash }}</span>
         </div>
+    @endif
 
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-4">
-            <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-                Contrátanos
-            </h1>
-            <p class="mt-1 text-gray-600 dark:text-gray-300">
-                Cuéntanos tu necesidad. Generaremos un radicado para hacer seguimiento.
-            </p>
-        </div>
-    </section>
-
-    {{-- Contenido --}}
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 pb-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
         {{-- Columna izquierda: Formulario --}}
-        <div class="md:col-span-2 space-y-6">
-            {{-- Alertas --}}
-            @if ($errors->any())
-                <div class="rounded-xl border border-red-200/70 bg-red-50/70 text-red-800 px-4 py-3 shadow-sm">
-                    <p class="font-semibold">Revisa los siguientes campos:</p>
-                    <ul class="mt-1 list-disc list-inside text-sm space-y-0.5">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
+        <div class="md:col-span-2">
+            <div class="rounded-2xl bg-white shadow p-5 md:p-6">
+                <div class="mb-5 flex items-center justify-between">
+                    <h2 class="text-xl font-semibold text-gray-800">Contrata a nuestro equipo</h2>
+                    <span class="text-sm text-gray-500">Radicará a tu nombre</span>
                 </div>
-            @endif
 
-            @if ($flash)
-                <div class="rounded-xl border border-emerald-200/70 bg-emerald-50/70 text-emerald-800 px-4 py-3 shadow-sm">
-                    <p class="font-medium">{{ $flash }}</p>
-                </div>
-            @endif
-
-            {{-- Tarjeta formulario --}}
-            <div class="rounded-2xl bg-white/80 dark:bg-white/5 backdrop-blur shadow-xl ring-1 ring-gray-900/5 dark:ring-white/10 p-6">
-                <div class="mb-5">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Datos de contacto</h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Los campos con <span class="text-red-600">*</span> son obligatorios.</p>
+                {{-- Aviso de costo --}}
+                <div class="mb-4 rounded-lg bg-yellow-50 border border-yellow-200 p-3">
+                    <p class="text-sm text-blue-800 font-medium">
+                        ℹ️ Envía tu solicitud y nuestro equipo te contactará con una propuesta personalizada.
+                    </p>
                 </div>
 
                 <form wire:submit.prevent="save" class="space-y-6">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {{-- Nombre --}}
-                        <label class="block">
-                            <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre <span class="text-red-600">*</span></span>
-                            <input type="text" wire:model.defer="nombre" placeholder="Ej. Ana Gómez"
-                                   class="mt-1 w-full rounded-xl border border-gray-300/80 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition">
-                            @error('nombre') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
-                        </label>
+                    {{-- Nombre / Email --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Nombre *</label>
+                            <input type="text" wire:model.defer="nombre"
+                                   class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                            @error('nombre') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        </div>
 
-                        {{-- Email --}}
-                        <label class="block">
-                            <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Correo electrónico <span class="text-red-600">*</span></span>
-                            <input type="email" wire:model.defer="email" placeholder="nombre@empresa.com"
-                                   class="mt-1 w-full rounded-xl border border-gray-300/80 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition">
-                            @error('email') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
-                        </label>
-
-                        {{-- Celular --}}
-                        <label class="block">
-                            <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Celular</span>
-                            <input type="text" wire:model.defer="celular" placeholder="+57 300 000 0000"
-                                   class="mt-1 w-full rounded-xl border border-gray-300/80 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition">
-                            @error('celular') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
-                        </label>
-
-                        {{-- Empresa --}}
-                        <label class="block">
-                            <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Empresa</span>
-                            <input type="text" wire:model.defer="empresa" placeholder="Nombre de la empresa"
-                                   class="mt-1 w-full rounded-xl border border-gray-300/80 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition">
-                            @error('empresa') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
-                        </label>
-
-                        {{-- NIT --}}
-                        <label class="block">
-                            <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">NIT</span>
-                            <input type="text" wire:model.defer="nit" placeholder="900123456-7"
-                                   class="mt-1 w-full rounded-xl border border-gray-300/80 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition">
-                            @error('nit') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
-                        </label>
-
-                        {{-- Servicio (select + Otro) --}}
-                        <div class="sm:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Servicio <span class="text-red-600">*</span></label>
-                            <div class="mt-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                <select
-                                    wire:model.defer="servicio"
-                                    x-on:change="otro = ($event.target.value === 'Otro')"
-                                    class="col-span-2 rounded-xl border border-gray-300/80 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition"
-                                >
-                                    <option value="">Selecciona...</option>
-                                    @foreach($servicios as $srv)
-                                        <option value="{{ $srv }}">{{ $srv }}</option>
-                                    @endforeach
-                                    <option value="Otro">Otro...</option>
-                                </select>
-
-                                <button type="button"
-                                        class="rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 active:scale-[.99] transition px-3 py-2 text-sm"
-                                        x-on:click="otro = true; $nextTick(()=>{ document.getElementById('srv_otro')?.focus() })">
-                                    Especificar
-                                </button>
-                            </div>
-                            @error('servicio') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
-
-                            <div x-show="otro" x-transition class="mt-2">
-                                <input id="srv_otro" type="text" placeholder="Describe el servicio que necesitas"
-                                       x-on:input="$wire.set('servicio', $event.target.value)"
-                                       class="w-full rounded-xl border border-gray-300/80 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition">
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Ej.: Integración con ERP, portal clientes, RPA, etc.</p>
-                            </div>
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Email *</label>
+                            <input type="email" wire:model.defer="email"
+                                   class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                            @error('email') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
                         </div>
                     </div>
 
-                    {{-- Mensaje --}}
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Mensaje</label>
-                        <textarea rows="4" wire:model.defer="mensaje"
-                                  placeholder="Cuéntanos alcance, prioridades y fechas estimadas."
-                                  class="mt-1 w-full rounded-xl border border-gray-300/80 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition"></textarea>
-                        @error('mensaje') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
+                    {{-- Celular / Empresa / NIT --}}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Celular</label>
+                            <input type="text" wire:model.defer="celular" placeholder="+57 300 123 4567"
+                                   class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                            @error('celular') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Empresa</label>
+                            <input type="text" wire:model.defer="empresa"
+                                   class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                            @error('empresa') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-gray-700">NIT</label>
+                            <input type="text" wire:model.defer="nit"
+                                   class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                            @error('nit') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        </div>
                     </div>
 
-                    {{-- CTA --}}
-                    <div class="flex items-center justify-between">
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Al enviar, se generará un radicado de seguimiento.</p>
+{{-- Servicio + Especificar --}}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+        <label class="mb-1 block text-sm font-medium text-gray-700">Servicio *</label>
+        <select wire:model="servicio"
+                class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+            <option value="">Seleccione…</option>
+            @foreach ($servicios as $srv)
+                <option value="{{ $srv }}">{{ $srv }}</option>
+            @endforeach
+        </select>
+        @error('servicio') 
+            <span class="text-sm text-red-600">{{ $message }}</span> 
+        @enderror
+    </div>
 
-                        <button type="submit"
-                                class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-600 text-white px-5 py-2.5 font-medium shadow-lg shadow-indigo-600/20 hover:from-indigo-700 hover:to-sky-700 focus:ring-4 focus:ring-indigo-500/30 active:scale-[.99] transition disabled:opacity-60 disabled:cursor-not-allowed"
-                                wire:loading.attr="disabled">
-                            <svg wire:loading class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4A4 4 0 004 12z"/>
-                            </svg>
-                            <span wire:loading.remove>Enviar solicitud</span>
-                            <span wire:loading>Guardando…</span>
+    <div>
+        <label class="mb-1 block text-sm font-medium text-gray-700">Especificar *</label>
+        <input type="text" wire:model.defer="especificar" placeholder="Describe lo que necesitas"
+               class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+        @error('especificar') 
+            <span class="text-sm text-red-600">{{ $message }}</span> 
+        @enderror
+    </div>
+</div>
+
+                    {{-- Mensaje --}}
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-gray-700">Mensaje</label>
+                        <textarea rows="4" wire:model.defer="mensaje"
+                                  class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                  placeholder="Cuéntanos sobre tu necesidad"></textarea>
+                        @error('mensaje') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                    </div>
+
+                    {{-- Acciones --}}
+                    <div class="flex items-center justify-end gap-3 pt-2">
+                        <button type="reset" class="rounded-xl border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">
+                            Limpiar
+                        </button>
+                        <button type="submit" class="rounded-xl bg-blue-600 px-4 py-2 font-medium text-white shadow hover:bg-blue-700">
+                            Enviar solicitud
                         </button>
                     </div>
                 </form>
             </div>
-
-            {{-- Último radicado --}}
-            @if ($ultimoRadicado)
-                <div class="rounded-2xl bg-emerald-50/70 dark:bg-emerald-900/20 border border-emerald-200/70 dark:border-emerald-800 p-4 flex items-center justify-between shadow-sm">
-                    <div>
-                        <p class="text-sm text-emerald-700 dark:text-emerald-300">Solicitud radicada correctamente</p>
-                        <p class="text-emerald-900 dark:text-emerald-100 font-semibold tracking-wide">
-                            Radicado: {{ $ultimoRadicado->numero }}
-                        </p>
-                    </div>
-                    <button type="button"
-                            x-on:click="copy('{{ $ultimoRadicado->numero }}')"
-                            class="text-sm rounded-lg border border-emerald-300/70 bg-white/70 dark:bg-white/10 backdrop-blur px-3 py-1.5 text-emerald-800 dark:text-emerald-200 hover:bg-white transition">
-                        Copiar
-                    </button>
-                </div>
-            @endif
         </div>
 
-        {{-- Sidebar --}}
-        <aside class="space-y-6">
-            <div class="sticky top-6 space-y-6">
-                {{-- Stats --}}
-                <div class="rounded-2xl bg-white/80 dark:bg-white/5 backdrop-blur shadow-xl ring-1 ring-gray-900/5 dark:ring-white/10 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Resumen</h3>
-                    <div class="grid grid-cols-3 gap-3">
-                        <div class="rounded-xl bg-gray-50 dark:bg-white/10 p-3 text-center shadow-sm">
-                            <div class="text-xs text-gray-500 dark:text-gray-400">Total</div>
-                            <div class="text-2xl font-extrabold text-gray-900 dark:text-white">{{ $stats['total'] }}</div>
-                        </div>
-                        <div class="rounded-xl bg-amber-50 dark:bg-amber-900/20 p-3 text-center shadow-sm">
-                            <div class="text-xs text-amber-700 dark:text-amber-300">Pendientes</div>
-                            <div class="text-2xl font-extrabold text-amber-600">{{ $stats['pendientes'] }}</div>
-                        </div>
-                        <div class="rounded-xl bg-emerald-50 dark:bg-emerald-900/20 p-3 text-center shadow-sm">
-                            <div class="text-xs text-emerald-700 dark:text-emerald-300">Cerrados</div>
-                            <div class="text-2xl font-extrabold text-emerald-600">{{ $stats['cerrados'] }}</div>
-                        </div>
+        {{-- Columna derecha: Resumen y recientes (persisten al refrescar) --}}
+        <div class="space-y-6 md:col-span-1 min-h-0">
+            {{-- Resumen --}}
+            <div class="rounded-2xl bg-white shadow p-5">
+                <h3 class="mb-4 text-lg font-semibold text-gray-800">Tus servicios</h3>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="rounded-xl border border-gray-200 p-3 text-center">
+                        <div class="text-xs text-gray-500">Total</div>
+                        <div class="text-2xl font-semibold text-gray-800">{{ $stats['total'] }}</div>
+                    </div>
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-center">
+                        <div class="text-xs text-amber-700">Pendientes</div>
+                        <div class="text-2xl font-semibold text-amber-800">{{ $stats['pendientes'] }}</div>
+                    </div>
+                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-center">
+                        <div class="text-xs text-emerald-700">Cerrados</div>
+                        <div class="text-2xl font-semibold text-emerald-800">{{ $stats['cerrados'] }}</div>
                     </div>
                 </div>
+            </div>
 
-                {{-- Últimos radicados --}}
-                <div class="rounded-2xl bg-white/80 dark:bg-white/5 backdrop-blur shadow-xl ring-1 ring-gray-900/5 dark:ring-white/10 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Últimos radicados</h3>
-                    <ul class="divide-y divide-gray-200/70 dark:divide-white/10 text-sm">
-                        @forelse ($radicados as $r)
-                            <li class="py-3 flex items-center justify-between group">
+            {{-- Recientes --}}
+            <div class="rounded-2xl bg-white shadow p-5 min-h-0">
+                <div class="mb-3 flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800">Recientes</h3>
+                    <span class="text-xs text-gray-500">últimos 8</span>
+                </div>
+
+                <div style="max-height: 220px; overflow-y: auto;" class="pr-2 space-y-3">
+                    @forelse ($solicitudes as $s)
+                        @php
+                            $estadoColor = match($s->estado) {
+                                'pendiente' => 'bg-amber-100 text-amber-800 border-amber-200',
+                                'cerrado'   => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                                default     => 'bg-blue-100 text-blue-800 border-blue-200',
+                            };
+                        @endphp
+
+                        <div class="rounded-xl border border-gray-200 p-3 hover:bg-gray-50 transition">
+                            <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0">
-                                    <p class="font-medium text-gray-800 dark:text-gray-200 truncate">{{ $r->numero }}</p>
-                                    <p class="text-gray-500 dark:text-gray-400">{{ optional($r->created_at)->diffForHumans() }}</p>
+                                    <div class="truncate text-sm font-medium text-gray-900">
+                                        {{ $s->servicio === 'Otro' ? ($s->especificar ?: 'Otro') : $s->servicio }}
+                                    </div>
+                                    <div class="mt-1 flex flex-wrap items-center gap-2">
+                                        <span class="inline-flex items-center rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+                                            {{ optional($s->radicado)->numero ?? 'Sin radicado' }}
+                                        </span>
+                                        <span class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs {{ $estadoColor }}">
+                                            {{ ucfirst($s->estado) }}
+                                        </span>
+                                    </div>
                                 </div>
-                                <button type="button"
-                                        class="text-xs rounded-md px-2 py-1 border border-indigo-200 bg-indigo-50 text-indigo-700 group-hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300 transition"
-                                        x-on:click="copy('{{ $r->numero }}')">
-                                    Copiar
-                                </button>
-                            </li>
-                        @empty
-                            <li class="py-2 text-gray-500 dark:text-gray-400">Sin registros</li>
-                        @endforelse
-                    </ul>
+                                <div class="text-right">
+                                    <div class="text-xs text-gray-500">{{ $s->created_at->format('d/m/Y H:i') }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="rounded-xl border border-dashed border-gray-300 p-6 text-center text-gray-500">
+                            Aún no tienes servicios solicitados.
+                        </div>
+                    @endforelse
                 </div>
             </div>
-        </aside>
+        </div>
     </div>
 </div>
