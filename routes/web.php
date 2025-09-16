@@ -2,46 +2,59 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Controladores propios
+// ─────────────────────────────────────────────────────────────────────────────
+// Controladores (HTTP) clásicos
+// ─────────────────────────────────────────────────────────────────────────────
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\ProfileController;
 
-/*
-|--------------------------------------------------------------------------
-| Público
-|--------------------------------------------------------------------------
-*/
+// ─────────────────────────────────────────────────────────────────────────────
+// Componentes Livewire (páginas internas)
+// ─────────────────────────────────────────────────────────────────────────────
+use App\Livewire\SoporteForm;       // /soporte
+use App\Livewire\ContratanosPage;   // /contacto  (Contrátanos)
+use App\Livewire\PqrForm;           // /pqr
+use App\Livewire\ConsultaTicket;    // /consulta-nit (Consulta de ticket/solicitud)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Público
+// ─────────────────────────────────────────────────────────────────────────────
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-/*
-|--------------------------------------------------------------------------
-| Área autenticada (Breeze)
-|--------------------------------------------------------------------------
-| Nota: /dashboard será el dashboard NORMAL de Breeze (no redirige al Home).
-*/
-Route::middleware(['auth', 'verified'])->group(function () {
-    // Dashboard normal de Breeze
-    Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
+// Formularios/acciones públicas del Home (si los sigues usando)
+Route::post('/contacto/enviar', [ContactController::class, 'submit'])->name('contact.submit');
+Route::get('/tracking', [TrackingController::class, 'lookup'])->name('tracking.lookup');
 
-    // Perfil de usuario (Breeze)
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+// ─────────────────────────────────────────────────────────────────────────────
+// Área autenticada (Breeze)
+// ─────────────────────────────────────────────────────────────────────────────
+Route::middleware(['auth', 'verified'])->group(function () {
+
+    // Dashboard (Blade normal de Breeze)
+    Route::view('/dashboard', 'dashboard')->name('dashboard');
+
+    // Perfil (Breeze)
+    Route::controller(ProfileController::class)->group(function () {
+        Route::get('/profile', 'edit')->name('profile.edit');
+        Route::patch('/profile', 'update')->name('profile.update');
+        Route::delete('/profile', 'destroy')->name('profile.destroy');
+    });
+
+    // Páginas internas — ahora con Livewire:
+    Route::get('/soporte', SoporteForm::class)->name('soporte.index');
+    Route::get('/contacto', ContratanosPage::class)->name('contacto.index');       // "Contrátanos"
+    Route::get('/pqr', PqrForm::class)->name('pqr.index');
+    Route::get('/consulta-nit', ConsultaTicket::class)->name('consulta-nit.index'); // Consulta de ticket/solicitud
 });
 
-/*
-|--------------------------------------------------------------------------
-| Formularios del Home
-|--------------------------------------------------------------------------
-*/
-Route::post('/contacto/enviar', [ContactController::class, 'submit'])->name('contact.submit'); // Form “Contactos”
-Route::get('/tracking', [TrackingController::class, 'lookup'])->name('tracking.lookup');       // Modal “Consultar referencia”
-
-/*
-|--------------------------------------------------------------------------
-| Autenticación (Breeze / Fortify)
-|--------------------------------------------------------------------------
-*/
+// ─────────────────────────────────────────────────────────────────────────────
+// Autenticación (Breeze / Fortify / etc.)
+// ─────────────────────────────────────────────────────────────────────────────
 require __DIR__ . '/auth.php';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fallback 404 (opcional)
+// ─────────────────────────────────────────────────────────────────────────────
+// Route::fallback(fn () => abort(404));
