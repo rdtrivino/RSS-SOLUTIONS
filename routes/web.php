@@ -9,6 +9,8 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RadicadoPdfController;
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Componentes Livewire (páginas internas)
@@ -26,6 +28,9 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // Formularios/acciones públicas del Home (si los sigues usando)
 Route::post('/contacto/enviar', [ContactController::class, 'submit'])->name('contact.submit');
 Route::get('/tracking', [TrackingController::class, 'lookup'])->name('tracking.lookup');
+Route::get('/pdf/radicado/{radicado}', RadicadoPdfController::class)
+    ->name('radicado.pdf')        // <- ESTE nombre debe existir
+    ->middleware('signed');       // URL firmada
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Área autenticada (Breeze)

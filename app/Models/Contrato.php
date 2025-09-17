@@ -21,6 +21,7 @@ class Contrato extends Model
         'especificar',
         'mensaje',
         'estado',
+        'plantilla',
     ];
 
     /**

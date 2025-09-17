@@ -6,12 +6,16 @@ use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use App\Models\Radicado;
+use App\Models\RadicadoRespuesta;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Storage;
 
 #[Layout('layouts.app')]
 #[Title('Consultar ticket')]
 class ConsultaTicket extends Component
 {
-    /** Número ingresado por el usuario (ej: PQR-2025-ABC123) */
+    /** Número ingresado por el usuario (ej: PQR-2025-000123) */
     public string $numero = '';
 
     /** Radicado encontrado (si existe) */
@@ -21,8 +25,11 @@ class ConsultaTicket extends Component
     public array $data = [];
 
     /** Estado de la UI */
-    public bool $searched = false;   // <- se marcara en cuanto se haga una búsqueda
-    public string $errorMsg = '';    // <- mensaje cuando no hay resultados
+    public bool $searched = false;
+    public string $errorMsg = '';
+
+    /** URL firmada para descargar el PDF del radicado (si aplica) */
+    public ?string $pdfUrl = null;
 
     protected function rules(): array
     {
@@ -40,19 +47,14 @@ class ConsultaTicket extends Component
         ];
     }
 
-    /**
-     * Permite precargar consulta si viene como parámetro (opcional).
-     * Ej: /consulta-nit?numero=PQR-2025-ABC123
-     */
     public function mount(?string $numero = null): void
     {
         if ($numero) {
-            $this->numero = $numero;
+            $this->numero = mb_strtoupper(trim($numero));
             $this->buscar();
         }
     }
 
-    /** Normaliza cuando el usuario escribe */
     public function updatedNumero(): void
     {
         $this->numero = mb_strtoupper(trim($this->numero));
@@ -67,11 +69,10 @@ class ConsultaTicket extends Component
         $this->errorMsg = '';
         $this->data     = [];
         $this->radicado = null;
+        $this->pdfUrl   = null;
 
-        // Normaliza para coincidir con el índice único de la tabla `radicados`
         $n = mb_strtoupper(trim($this->numero));
 
-        // Búsqueda exacta por numero (case-insensitive)
         $this->radicado = Radicado::with('radicable')
             ->whereRaw('UPPER(numero) = ?', [$n])
             ->first();
@@ -81,25 +82,50 @@ class ConsultaTicket extends Component
             return;
         }
 
-        // Construir datos normalizados para la vista
+        // Datos para pintar
         $this->data = $this->normalizarRadicable();
+
+        // URL PDF: basada en radicado_respuestas (sirve para soporte, contrato y pqr)
+        $this->pdfUrl = $this->computePdfUrl($this->radicado);
     }
 
     /** Limpia resultados y formulario */
     public function limpiar(): void
     {
-        $this->reset(['numero', 'radicado', 'data', 'searched', 'errorMsg']);
+        $this->reset(['numero', 'radicado', 'data', 'searched', 'errorMsg', 'pdfUrl']);
     }
 
-    /**
-     * Normaliza los campos más relevantes según el módulo (soporte/contrato/pqr)
-     * para que la vista pinte sin condicionales complejos.
-     */
+    /** Genera URL firmada si hay un PDF almacenado en radicado_respuestas */
+    private function computePdfUrl(Radicado $radicado): ?string
+    {
+        if (!Route::has('radicado.pdf')) {
+            return null;
+        }
+
+        $respuesta = RadicadoRespuesta::where('radicado_id', $radicado->id)
+            ->where('cierra_caso', true)
+            ->whereNotNull('pdf_path')
+            ->latest('created_at')
+            ->first();
+
+        if (!$respuesta) {
+            return null;
+        }
+
+        // Verificar que el archivo exista (opcional pero útil para no mostrar botón roto)
+        if (!Storage::disk('public')->exists($respuesta->pdf_path)) {
+            return null;
+        }
+
+        return URL::signedRoute('radicado.pdf', ['radicado' => $radicado->id]);
+    }
+
+    /** Normaliza campos para la vista, independiente del módulo */
     private function normalizarRadicable(): array
     {
         $r = $this->radicado;
         $m = $r->modulo;
-        $x = $r->radicable; // modelo concreto (Soporte | Contrato | Pqr | ...)
+        $x = $r->radicable;
 
         $base = [
             'radicado' => $r->numero,
@@ -124,7 +150,7 @@ class ConsultaTicket extends Component
                     'Tipo servicio'   => $x->tipo_servicio ?? null,
                     'Modalidad'       => $x->modalidad ?? null,
                     'Fecha'           => optional($x->created_at)->format('d/m/Y H:i'),
-                ], fn($v) => !is_null($v) && $v !== '');
+                ], fn($v) => $v !== null && $v !== '');
                 break;
 
             case 'contrato':
@@ -139,7 +165,7 @@ class ConsultaTicket extends Component
                     'Especificar'  => $x->especificar ?? null,
                     'Mensaje'      => $x->mensaje ?? null,
                     'Fecha'        => optional($x->created_at)->format('d/m/Y H:i'),
-                ], fn($v) => !is_null($v) && $v !== '');
+                ], fn($v) => $v !== null && $v !== '');
                 break;
 
             case 'pqr':
@@ -149,7 +175,7 @@ class ConsultaTicket extends Component
                     'Descripción'  => $x->descripcion ?? null,
                     'Fecha'        => optional($x->created_at)->format('d/m/Y H:i'),
                     'Usuario (ID)' => $x->user_id ?? null,
-                ], fn($v) => !is_null($v) && $v !== '');
+                ], fn($v) => $v !== null && $v !== '');
                 break;
 
             default:
@@ -157,7 +183,7 @@ class ConsultaTicket extends Component
                 $base['detalles'] = array_filter([
                     'ID asociado' => $x->id ?? null,
                     'Fecha'       => optional($x->created_at)->format('d/m/Y H:i'),
-                ], fn($v) => !is_null($v) && $v !== '');
+                ], fn($v) => $v !== null && $v !== '');
                 break;
         }
 
@@ -166,6 +192,8 @@ class ConsultaTicket extends Component
 
     public function render()
     {
-        return view('livewire.consulta-ticket');
+        return view('livewire.consulta-ticket', [
+            'pdfUrl' => $this->pdfUrl,
+        ]);
     }
 }
