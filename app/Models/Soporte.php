@@ -24,7 +24,7 @@ class Soporte extends Model
         'estado',
         'prioridad',
 
-        // Nuevos campos
+        // Nuevos campos de contacto / reporte
         'tipo_documento',
         'numero_documento',
         'ciudad',
@@ -32,6 +32,14 @@ class Soporte extends Model
         'telefono',
         'tipo_servicio',
         'modalidad',
+
+        // Campos del equipo
+        'tipo_equipo',
+        'marca',
+        'modelo',
+        'serial',
+        'so',
+        'accesorios',
     ];
 
     protected $casts = [

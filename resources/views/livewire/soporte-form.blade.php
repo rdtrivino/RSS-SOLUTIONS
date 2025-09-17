@@ -1,74 +1,88 @@
 <div class="mx-auto max-w-6xl p-4 md:p-6">
     {{-- Notificación de éxito --}}
-@if ($mensaje)
-    <div class="mb-4 flex items-center gap-3 rounded-lg border-l-4 border-green-700 bg-green-100 p-4 text-green-800 shadow">
-        {{-- Icono check --}}
-        <svg class="h-5 w-5 flex-shrink-0 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-        </svg>
-        <span class="font-medium">{{ $mensaje }}</span>
-    </div>
-@endif
+    @if ($mensaje)
+        <div class="mb-4 flex items-center gap-3 rounded-lg border-l-4 border-green-700 bg-green-100 p-4 text-green-800 shadow">
+            <svg class="h-5 w-5 flex-shrink-0 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span class="font-medium">{{ $mensaje }}</span>
+        </div>
+    @endif
 
     <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
         {{-- Columna izquierda: Formulario --}}
-        <div class="md:col-span-2">
-            <div class="rounded-2xl bg-white shadow p-5 md:p-6">
-                <div class="mb-5 flex items-center justify-between">
+        <div class="md:col-span-2 space-y-6">
+            {{-- Aviso de costo --}}
+            <div class="rounded-2xl bg-yellow-50 border border-yellow-200 p-4">
+                <p class="text-sm text-yellow-800 font-medium">
+                    ⚠️ Cualquier revisión tiene un costo de <span class="font-semibold">30.000 COP</span>.
+                </p>
+            </div>
+
+            <form wire:submit.prevent="save" class="rounded-2xl bg-white shadow p-5 md:p-6 space-y-7">
+                <div class="flex items-center justify-between">
                     <h2 class="text-xl font-semibold text-gray-800">Crear soporte</h2>
-                    <span class="text-sm text-gray-500">Radicará a tu nombre</span>
+                    <span class="text-sm text-gray-500">Se radicará a tu nombre</span>
                 </div>
 
-                 {{-- Aviso de costo --}}
-                <div class="mb-4 rounded-lg bg-yellow-50 border border-yellow-200 p-3">
-                    <p class="text-sm text-yellow-800 font-medium">
-                        ⚠️ Cualquier revisión tiene un costo de 30.000 COP.
-                    </p>
-                </div>
-                <form wire:submit.prevent="save" class="space-y-6">
-                    {{-- Título --}}
-                    <div>
-                        <label class="mb-1 block text-sm font-medium text-gray-700">Título</label>
-                        <input type="text" wire:model.defer="titulo" class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-                        @error('titulo') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
-                    </div>
-
-                    {{-- Descripción --}}
-                    <div>
-                        <label class="mb-1 block text-sm font-medium text-gray-700">Descripción</label>
-                        <textarea 
-                            rows="4" 
-                            wire:model.defer="descripcion" 
-                            class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                            placeholder="Describir las fallas presentadas, incluir marca, serial y cualquier detalle adicional..."></textarea>
-                        @error('descripcion') 
-                            <span class="text-sm text-red-600">{{ $message }}</span> 
-                        @enderror
-                    </div>
-                    {{-- Grid de campos adicionales --}}
+                {{-- 1) Datos del caso --}}
+                <section class="space-y-4">
+                    <h3 class="text-sm font-semibold text-gray-700">1. Datos del caso</h3>
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        {{-- Prioridad --}}
+                        <div class="md:col-span-2">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Título</label>
+                            <input type="text"
+                                   wire:model.defer="titulo"
+                                   maxlength="150"
+                                   placeholder="Ej: El equipo no enciende / Internet intermitente"
+                                   class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                            <div class="mt-1 flex items-center justify-between text-xs">
+                                <span class="text-gray-500">Sé breve y descriptivo.</span>
+                                <span class="text-gray-400"><span x-text="$el.previousElementSibling?.value?.length || 0"></span>/150</span>
+                            </div>
+                            @error('titulo') <div class="mt-1 text-sm text-red-600">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Descripción</label>
+                            <textarea rows="4"
+                                      wire:model.defer="descripcion"
+                                      placeholder="Describe las fallas presentadas, menciona si ya revisaste cables, si aparece algún error, etc."
+                                      class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"></textarea>
+                            @error('descripcion') <div class="mt-1 text-sm text-red-600">{{ $message }}</div> @enderror
+                        </div>
+
                         <div>
                             <label class="mb-1 block text-sm font-medium text-gray-700">Prioridad</label>
-                            <select wire:model.defer="prioridad" class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                            <select wire:model.defer="prioridad"
+                                    class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
                                 <option value="baja">Baja</option>
                                 <option value="media">Media</option>
                                 <option value="alta">Alta</option>
                             </select>
-                            @error('prioridad') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                            @error('prioridad') <div class="mt-1 text-sm text-red-600">{{ $message }}</div> @enderror
                         </div>
+                    </div>
+                </section>
 
-                        {{-- Teléfono --}}
+                {{-- 2) Contacto y ubicación --}}
+                <section class="space-y-4">
+                    <h3 class="text-sm font-semibold text-gray-700">2. Contacto y ubicación</h3>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
                             <label class="mb-1 block text-sm font-medium text-gray-700">Teléfono / Celular</label>
-                            <input type="text" wire:model.defer="telefono" placeholder="+57 300 123 4567" class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-                            @error('telefono') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                            <input type="text"
+                                   wire:model.defer="telefono"
+                                   inputmode="numeric"
+                                   placeholder="3001234567"
+                                   class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                            @error('telefono') <div class="mt-1 text-sm text-red-600">{{ $message }}</div> @enderror
                         </div>
 
-                        {{-- Tipo documento --}}
                         <div>
                             <label class="mb-1 block text-sm font-medium text-gray-700">Tipo de documento</label>
-                            <select wire:model.defer="tipo_documento" class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                            <select wire:model.defer="tipo_documento"
+                                    class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
                                 <option value="">Seleccione...</option>
                                 <option value="CC">Cédula de ciudadanía</option>
                                 <option value="CE">Cédula de extranjería</option>
@@ -76,34 +90,47 @@
                                 <option value="PAS">Pasaporte</option>
                                 <option value="TI">Tarjeta de identidad</option>
                             </select>
-                            @error('tipo_documento') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                            @error('tipo_documento') <div class="mt-1 text-sm text-red-600">{{ $message }}</div> @enderror
                         </div>
 
-                        {{-- Número documento --}}
                         <div>
                             <label class="mb-1 block text-sm font-medium text-gray-700">Número de documento</label>
-                            <input type="text" wire:model.defer="numero_documento" class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-                            @error('numero_documento') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                            <input type="text"
+                                   wire:model.defer="numero_documento"
+                                   inputmode="numeric"
+                                   placeholder="Ej: 1234567890"
+                                   class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                            @error('numero_documento') <div class="mt-1 text-sm text-red-600">{{ $message }}</div> @enderror
                         </div>
 
-                        {{-- Ciudad --}}
                         <div>
                             <label class="mb-1 block text-sm font-medium text-gray-700">Ciudad</label>
-                            <input type="text" wire:model.defer="ciudad" class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-                            @error('ciudad') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                            <input type="text"
+                                   wire:model.defer="ciudad"
+                                   placeholder="Ej: Bogotá"
+                                   class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                            @error('ciudad') <div class="mt-1 text-sm text-red-600">{{ $message }}</div> @enderror
                         </div>
 
-                        {{-- Dirección --}}
-                        <div>
+                        <div class="md:col-span-2">
                             <label class="mb-1 block text-sm font-medium text-gray-700">Dirección exacta</label>
-                            <input type="text" wire:model.defer="direccion" class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-                            @error('direccion') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                            <input type="text"
+                                   wire:model.defer="direccion"
+                                   placeholder="Calle 123 # 45 - 67, Apto 101"
+                                   class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                            @error('direccion') <div class="mt-1 text-sm text-red-600">{{ $message }}</div> @enderror
                         </div>
+                    </div>
+                </section>
 
-                        {{-- Tipo servicio --}}
+                {{-- 3) Servicio --}}
+                <section class="space-y-4">
+                    <h3 class="text-sm font-semibold text-gray-700">3. Servicio</h3>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
                             <label class="mb-1 block text-sm font-medium text-gray-700">Tipo de servicio</label>
-                            <select wire:model.defer="tipo_servicio" class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                            <select wire:model.defer="tipo_servicio"
+                                    class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
                                 <option value="">Seleccione...</option>
                                 <option value="Redes">Redes</option>
                                 <option value="Hardware">Hardware</option>
@@ -112,10 +139,9 @@
                                 <option value="Servidor">Servidor</option>
                                 <option value="Otros">Otros</option>
                             </select>
-                            @error('tipo_servicio') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                            @error('tipo_servicio') <div class="mt-1 text-sm text-red-600">{{ $message }}</div> @enderror
                         </div>
 
-                        {{-- Modalidad --}}
                         <div>
                             <label class="mb-1 block text-sm font-medium text-gray-700">Modalidad</label>
                             <div class="flex items-center gap-6 rounded-xl border border-gray-200 p-2.5">
@@ -128,21 +154,76 @@
                                     <span class="text-sm text-gray-700">Requiere recogida</span>
                                 </label>
                             </div>
-                            @error('modalidad') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                            @error('modalidad') <div class="mt-1 text-sm text-red-600">{{ $message }}</div> @enderror
                         </div>
                     </div>
+                </section>
 
-                    {{-- Acciones --}}
-                    <div class="flex items-center justify-end gap-3 pt-2">
-                        <button type="reset" class="rounded-xl border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">
-                            Limpiar
-                        </button>
-                        <button type="submit" class="rounded-xl bg-blue-600 px-4 py-2 font-medium text-white shadow hover:bg-blue-700">
-                            Crear soporte
-                        </button>
+                {{-- 4) Equipo (opcional) --}}
+                <section class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-gray-700">4. Equipo <span class="font-normal text-gray-500">(opcional)</span></h3>
+                        <span class="text-xs text-gray-500">Completa si aplica</span>
                     </div>
-                </form>
-            </div>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Tipo de equipo</label>
+                            <input type="text" wire:model.defer="tipo_equipo" placeholder="Portátil, PC, Servidor, etc."
+                                   class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                            @error('tipo_equipo') <div class="mt-1 text-sm text-red-600">{{ $message }}</div> @enderror
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Marca</label>
+                            <input type="text" wire:model.defer="marca" placeholder="Lenovo, HP, Dell..."
+                                   class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                            @error('marca') <div class="mt-1 text-sm text-red-600">{{ $message }}</div> @enderror
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Modelo</label>
+                            <input type="text" wire:model.defer="modelo" placeholder="ThinkPad E14, Pavilion 15..."
+                                   class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                            @error('modelo') <div class="mt-1 text-sm text-red-600">{{ $message }}</div> @enderror
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Serial</label>
+                            <input type="text" wire:model.defer="serial" placeholder="Número de serie"
+                                   class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                            @error('serial') <div class="mt-1 text-sm text-red-600">{{ $message }}</div> @enderror
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-gray-700">S.O.</label>
+                            <input type="text" wire:model.defer="so" placeholder="Windows 11, Ubuntu 22.04..."
+                                   class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                            @error('so') <div class="mt-1 text-sm text-red-600">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Accesorios</label>
+                            <input type="text" wire:model.defer="accesorios" placeholder="Cargador, mouse, teclado..."
+                                   class="w-full rounded-xl border border-gray-300 p-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                            @error('accesorios') <div class="mt-1 text-sm text-red-600">{{ $message }}</div> @enderror
+                        </div>
+                    </div>
+                </section>
+
+                {{-- Acciones --}}
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button type="reset"
+                            @click="$dispatch('reset')"
+                            class="rounded-xl border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">
+                        Limpiar
+                    </button>
+
+                    <button type="submit"
+                            wire:loading.attr="disabled"
+                            class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 font-medium text-white shadow hover:bg-blue-700 disabled:opacity-60">
+                        <svg wire:loading class="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" class="opacity-20"/>
+                            <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" fill="none" class="opacity-80"/>
+                        </svg>
+                        Crear soporte
+                    </button>
+                </div>
+            </form>
         </div>
 
         {{-- Columna derecha: Panel de tickets del usuario --}}
@@ -174,8 +255,7 @@
                     <span class="text-xs text-gray-500">últimos 8</span>
                 </div>
 
-                {{-- Contenedor con scroll --}}
-                <div style="max-height: 220px; overflow-y: auto;" class="pr-2 space-y-3">
+                <div style="max-height: 240px; overflow-y: auto;" class="pr-2 space-y-3">
                     @forelse ($tickets as $t)
                         @php
                             $estadoColor = match($t->estado) {

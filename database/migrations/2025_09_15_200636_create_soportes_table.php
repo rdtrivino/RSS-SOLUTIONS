@@ -25,7 +25,6 @@ return new class extends Migration
             $table->string('numero_documento', 100)->nullable();
             $table->string('ciudad', 100)->nullable();
             $table->string('direccion', 200)->nullable();
-
             $table->string('telefono', 30)->nullable(); // Número de celular o fijo
 
             $table->string('tipo_servicio', 100)->nullable(); 
@@ -34,9 +33,18 @@ return new class extends Migration
             $table->enum('modalidad', ['local', 'recoger'])->default('local');
             // local = usuario trae el equipo, recoger = el soporte debe ir a domicilio
 
+            // ==== Campos del equipo ====
+            $table->string('tipo_equipo', 100)->nullable();   // Ej: Portátil, PC, Servidor
+            $table->string('marca', 100)->nullable();
+            $table->string('modelo', 100)->nullable();
+            $table->string('serial', 100)->nullable();
+            $table->string('so', 100)->nullable();            // Sistema operativo
+            $table->string('accesorios', 200)->nullable();    // Ej: Cargador, mouse, teclado
+
             $table->timestamps();
         });
     }
+
     public function down(): void
     {
         Schema::dropIfExists('soportes');

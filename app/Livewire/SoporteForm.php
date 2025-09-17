@@ -15,14 +15,22 @@ class SoporteForm extends Component
     public string $descripcion = '';
     public string $prioridad = 'media';
 
-    // Nuevos campos
+    // Nuevos campos de contacto / reporte
     public ?string $tipo_documento = null;      // CC | CE | NIT | PAS | TI
     public ?string $numero_documento = null;
     public ?string $ciudad = null;
     public ?string $direccion = null;
-    public ?string $telefono = null;            // Nuevo campo
+    public ?string $telefono = null;
     public ?string $tipo_servicio = null;       // Redes | Hardware | Software | Impresora | Servidor | Otros
     public string $modalidad = 'local';         // local | recoger
+
+    // Campos del equipo (opcionales)
+    public ?string $tipo_equipo = null;         // Portátil, PC, Servidor, etc.
+    public ?string $marca = null;
+    public ?string $modelo = null;
+    public ?string $serial = null;
+    public ?string $so = null;                  // Sistema operativo
+    public ?string $accesorios = null;
 
     public string $mensaje = '';
 
@@ -43,24 +51,32 @@ class SoporteForm extends Component
     ];
     public $tickets = [];
 
-   protected function rules(): array
-{
-    return [
-        // Base
-        'titulo'            => ['required','string','min:3','max:150'],
-        'descripcion'       => ['required','string','min:5'],
-        'prioridad'         => ['required','in:baja,media,alta'],
+    protected function rules(): array
+    {
+        return [
+            // Base
+            'titulo'            => ['required','string','min:3','max:150'],
+            'descripcion'       => ['required','string','min:5'],
+            'prioridad'         => ['required','in:baja,media,alta'],
 
-        // Nuevos (TODOS requeridos)
-        'tipo_documento'    => ['required','in:CC,CE,NIT,PAS,TI'],
-        'numero_documento'  => ['required','regex:/^\d{6,15}$/'],     // solo dígitos, 6-15
-        'ciudad'            => ['required','string','max:100'],
-        'direccion'         => ['required','string','max:200'],
-        'telefono'          => ['required','regex:/^\d{7,15}$/'],     // solo dígitos, 7-15
-        'tipo_servicio'     => ['required','in:Redes,Hardware,Software,Impresora,Servidor,Otros'],
-        'modalidad'         => ['required','in:local,recoger'],
-    ];
-}
+            // Nuevos (requeridos)
+            'tipo_documento'    => ['required','in:CC,CE,NIT,PAS,TI'],
+            'numero_documento'  => ['required','regex:/^\d{6,15}$/'],     // solo dígitos, 6-15
+            'ciudad'            => ['required','string','max:100'],
+            'direccion'         => ['required','string','max:200'],
+            'telefono'          => ['required','regex:/^\d{7,15}$/'],     // solo dígitos, 7-15
+            'tipo_servicio'     => ['required','in:Redes,Hardware,Software,Impresora,Servidor,Otros'],
+            'modalidad'         => ['required','in:local,recoger'],
+
+            // Equipo (opcionales). Si quieres hacerlos obligatorios, cambia 'nullable' por 'required'.
+            'tipo_equipo'       => ['nullable','string','max:100'],
+            'marca'             => ['nullable','string','max:100'],
+            'modelo'            => ['nullable','string','max:100'],
+            'serial'            => ['nullable','string','max:100'],
+            'so'                => ['nullable','string','max:100'],
+            'accesorios'        => ['nullable','string','max:200'],
+        ];
+    }
 
     protected function messages(): array
     {
@@ -93,6 +109,14 @@ class SoporteForm extends Component
 
             'modalidad.required' => 'Selecciona la modalidad.',
             'modalidad.in'       => 'Modalidad no válida.',
+
+            // Mensajes equipo (opcionales)
+            'tipo_equipo.max' => 'Tipo de equipo no puede superar :max caracteres.',
+            'marca.max'       => 'La marca no puede superar :max caracteres.',
+            'modelo.max'      => 'El modelo no puede superar :max caracteres.',
+            'serial.max'      => 'El serial no puede superar :max caracteres.',
+            'so.max'          => 'El S.O. no puede superar :max caracteres.',
+            'accesorios.max'  => 'Accesorios no puede superar :max caracteres.',
         ];
     }
 
@@ -133,15 +157,24 @@ class SoporteForm extends Component
 
             'tipo_documento'   => $this->tipo_documento,
             'numero_documento' => $this->numero_documento,
-            'ciudad'           => trim($this->ciudad),
-            'direccion'        => trim($this->direccion),
+            'ciudad'           => $this->ciudad ? trim($this->ciudad) : null,
+            'direccion'        => $this->direccion ? trim($this->direccion) : null,
             'telefono'         => $this->telefono,
             'tipo_servicio'    => $this->tipo_servicio,
             'modalidad'        => $this->modalidad,
+
+            // Equipo
+            'tipo_equipo'      => $this->tipo_equipo ? trim($this->tipo_equipo) : null,
+            'marca'            => $this->marca ? trim($this->marca) : null,
+            'modelo'           => $this->modelo ? trim($this->modelo) : null,
+            'serial'           => $this->serial ? trim($this->serial) : null,
+            'so'               => $this->so ? trim($this->so) : null,
+            'accesorios'       => $this->accesorios ? trim($this->accesorios) : null,
         ];
 
         $soporte = Soporte::create($data);
 
+        // Generar número de radicado
         $numero = 'SOP-'.date('Y').'-'.str_pad((string) $soporte->id, 6, '0', STR_PAD_LEFT);
 
         $radicado = $soporte->radicado()->create([
@@ -150,10 +183,12 @@ class SoporteForm extends Component
             'user_id' => Auth::id(),
         ]);
 
+        // Limpiar formulario
         $this->reset([
             'titulo','descripcion','prioridad',
             'tipo_documento','numero_documento','ciudad','direccion',
             'telefono','tipo_servicio',
+            'tipo_equipo','marca','modelo','serial','so','accesorios',
         ]);
         $this->modalidad = 'local';
 
