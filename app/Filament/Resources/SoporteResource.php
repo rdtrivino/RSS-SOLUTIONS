@@ -15,6 +15,7 @@ use Filament\Tables\Actions\Action;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Filament\Notifications\Notification;
+use App\Services\FacturacionService; // <<< IMPORTANTE
 
 class SoporteResource extends Resource
 {
@@ -25,13 +26,11 @@ class SoporteResource extends Resource
     protected static ?string $navigationLabel = 'Soportes';
     protected static ?int    $navigationSort  = 20;
 
-    // Eager load para mostrar radicado y usuario en tabla/vista
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with(['radicado.user']);
     }
 
-    // SOLO LECTURA (lo que radicó el usuario)
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -105,22 +104,18 @@ class SoporteResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
 
-                // CAMBIAR ESTADO: tareas con precios + IVA + PDF
                 Action::make('cambiar_estado')
                     ->label('Cambiar estado')
                     ->icon('heroicon-m-arrow-path')
-                    // Ocultar acción si ya está cerrado (protección UI)
                     ->visible(fn (Soporte $record) => $record->estado !== 'cerrado')
                     ->form([
                         Forms\Components\Select::make('nuevo_estado')
                             ->label('Nuevo estado')
-                            // Solo transiciones válidas según estado actual
                             ->options(function (?Soporte $record) {
-                                $estado = $record?->estado;
-                                return match ($estado) {
-                                    'abierto'      => ['en_progreso' => 'En progreso', 'cerrado' => 'Cerrado'],
-                                    'en_progreso'  => ['cerrado' => 'Cerrado'],
-                                    default        => ['cerrado' => 'Cerrado'],
+                                return match ($record?->estado) {
+                                    'abierto'     => ['en_progreso' => 'En progreso', 'cerrado' => 'Cerrado'],
+                                    'en_progreso' => ['cerrado' => 'Cerrado'],
+                                    default       => ['cerrado' => 'Cerrado'],
                                 };
                             })
                             ->required(),
@@ -162,13 +157,11 @@ class SoporteResource extends Resource
                     ])
                     ->action(function (Soporte $record, array $data) {
 
-                        // Protección server-side: si está cerrado, no permitir reabrir
                         if ($record->estado === 'cerrado') {
                             Notification::make()
                                 ->title('Caso cerrado')
                                 ->body('Este soporte ya está cerrado y no puede reabrirse.')
-                                ->danger()
-                                ->send();
+                                ->danger()->send();
                             return;
                         }
 
@@ -176,24 +169,22 @@ class SoporteResource extends Resource
                         $tareas  = $data['tareas'] ?? [];
                         $otras   = trim((string)($data['tareas_otras'] ?? ''));
 
-                        // 1) Actualiza estado del soporte (solo a estados válidos)
                         $transicionesValidas = match ($record->estado) {
                             'abierto'     => ['en_progreso', 'cerrado'],
                             'en_progreso' => ['cerrado'],
-                            default       => [], // cerrado -> ninguna
+                            default       => [],
                         };
                         if (! in_array($nuevo, $transicionesValidas, true)) {
                             Notification::make()
                                 ->title('Transición inválida')
                                 ->body('No es posible cambiar el estado seleccionado desde el estado actual.')
-                                ->warning()
-                                ->send();
+                                ->warning()->send();
                             return;
                         }
 
                         $record->update(['estado' => $nuevo]);
 
-                        // 2) Mapea tareas -> nombres de productos/servicios para buscar precios
+                        // Map de claves -> nombre catálogo
                         $tareasMap = [
                             'diag'           => 'Diagnóstico',
                             'formateo'       => 'Formateo e instalación de S.O.',
@@ -208,14 +199,14 @@ class SoporteResource extends Resource
                         ];
                         $seleccionLabels = array_values(array_intersect_key($tareasMap, array_flip($tareas)));
 
-                        // 3) Consulta catálogo por nombre
+                        // Catálogo
                         $catalogo = ProductoServicio::query()
                             ->whereIn('nombre', $seleccionLabels)
                             ->where('activo', true)
                             ->get()
                             ->keyBy('nombre');
 
-                        // 4) Construye ítems (cant=1) con IVA y totales
+                        // Construir items
                         $itemsCalc = [];
                         $subtotal = $ivaTotal = $total = 0;
 
@@ -223,7 +214,7 @@ class SoporteResource extends Resource
                             $prod = $catalogo->get($nombre);
                             $cant = 1;
                             $pu   = $prod ? (float) $prod->precio_base : 0.0;
-                            $ivaP = $prod ? (float) $prod->iva_pct     : 19.0; // CO por defecto
+                            $ivaP = $prod ? (float) $prod->iva_pct     : 19.0;
 
                             $base     = $cant * $pu;
                             $sub      = round($base, 2);
@@ -248,7 +239,6 @@ class SoporteResource extends Resource
                             $total    += $tot;
                         }
 
-                        // “Otros” no tarifado (si se escribió)
                         if (in_array('otros', $tareas, true) && $otras !== '') {
                             $itemsCalc[] = [
                                 'concepto'        => "Otros: " . $otras,
@@ -264,7 +254,6 @@ class SoporteResource extends Resource
                             ];
                         }
 
-                        // 5) Payload a guardar en la respuesta
                         $payload = [
                             'estado'        => $nuevo,
                             'tareas'        => $tareas,
@@ -280,7 +269,6 @@ class SoporteResource extends Resource
                             ],
                         ];
 
-                        // 6) Crea la respuesta (paso)
                         $resp = RadicadoRespuesta::create([
                             'radicado_id' => $record->radicado?->id,
                             'user_id'     => Auth::id(),
@@ -290,7 +278,7 @@ class SoporteResource extends Resource
                             'cierra_caso' => $nuevo === 'cerrado',
                         ]);
 
-                        // 7) Si se cerró, genera PDF (incluyendo ítems y totales)
+                        // Si se cerró, generar PDF
                         if ($nuevo === 'cerrado' && $record->radicado) {
                             $pdf  = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.soporte-cierre', [
                                 'radicado'  => $record->radicado->load('user'),
@@ -306,9 +294,25 @@ class SoporteResource extends Resource
                             Storage::disk('public')->put($path, $pdf->output());
                             $resp->update(['pdf_path' => $path]);
                         }
+
+                        // >>> FACTURACIÓN: crear/actualizar factura desde el cierre
+                        if ($nuevo === 'cerrado' && $record->radicado) {
+                            try {
+                                app(FacturacionService::class)
+                                    ->crearOActualizarDesdeCierre($record->radicado->fresh(), $resp->fresh());
+                            } catch (\Throwable $e) {
+                                // No romper el flujo del cierre si falla la facturación
+                                report($e);
+                                Notification::make()
+                                    ->title('Cierre realizado con observación')
+                                    ->body('El cierre fue exitoso, pero hubo un problema creando/actualizando la factura.')
+                                    ->warning()->send();
+                            }
+                        }
+
+                        Notification::make()->title('Estado actualizado')->success()->send();
                     }),
 
-                // DESCARGAR PDF (aparece solo si hay cierre con PDF)
                 Action::make('descargar_pdf')
                     ->label('Descargar PDF')
                     ->icon('heroicon-m-arrow-down-tray')

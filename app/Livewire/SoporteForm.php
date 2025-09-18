@@ -183,6 +183,11 @@ class SoporteForm extends Component
             'user_id' => Auth::id(),
         ]);
 
+        // Asegurar factura borrador ligada al radicado (para registrar anticipos desde ya)
+        app(\App\Services\FacturacionService::class)
+            ->ensureFacturaBorrador($radicado, $soporte);
+
+
         // Limpiar formulario
         $this->reset([
             'titulo','descripcion','prioridad',

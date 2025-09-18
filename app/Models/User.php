@@ -7,25 +7,26 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+// Filament
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+
+class User extends Authenticatable implements FilamentUser
 {
     use HasFactory, Notifiable, HasRoles;
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
+     * Atributos asignables en masa.
      */
     protected $fillable = [
         'name',
         'email',
         'password',
+        'is_active',       // opcional si usas esta columna
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
+     * Atributos ocultos en serializaci車n.
      */
     protected $hidden = [
         'password',
@@ -33,27 +34,33 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Casts de atributos.
      */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'password'          => 'hashed',
+            'is_active'         => 'boolean',
         ];
     }
 
     /**
      * Control de acceso a paneles de Filament.
+     * - admin  ↙ requiere rol 'admin'
+     * - staff  ↙ permite 'admin' o 'empleado'
+     * Si usas is_active y es false, bloquea acceso.
      */
-    public function canAccessPanel(\Filament\Panel $panel): bool
+    public function canAccessPanel(Panel $panel): bool
     {
+        if (($this->is_active ?? true) === false) {
+            return false;
+        }
+
         return match ($panel->getId()) {
-            'admin'  => $this->hasRole('admin'),
-            'staff'  => $this->hasAnyRole(['admin','empleado']),
-            default  => false,
+            'admin' => $this->hasRole('admin'),
+            'staff' => $this->hasAnyRole(['admin', 'empleado']),
+            default => false,
         };
     }
 }

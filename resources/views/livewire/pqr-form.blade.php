@@ -46,6 +46,8 @@
                             <option value="peticion">Petición</option>
                             <option value="queja">Queja</option>
                             <option value="reclamo">Reclamo</option>
+                            <option value="reclamo">sugerencia</option>
+                            <option value="reclamo">felicitacion</option>
                         </select>
                         @error('tipo') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
                     </div>
