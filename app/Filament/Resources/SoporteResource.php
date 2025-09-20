@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Filament\Notifications\Notification;
 use App\Services\FacturacionService; // <<< IMPORTANTE
+use Illuminate\Support\Facades\Log;    // <<< NUEVO
+use Illuminate\Support\Str;            // <<< NUEVO
 
 class SoporteResource extends Resource
 {
@@ -295,18 +297,55 @@ class SoporteResource extends Resource
                             $resp->update(['pdf_path' => $path]);
                         }
 
-                        // >>> FACTURACIÓN: crear/actualizar factura desde el cierre
+                        // >>> FACTURACIÓN: crear/actualizar factura desde el cierre (con diagnóstico)
                         if ($nuevo === 'cerrado' && $record->radicado) {
+                            $errorId = Str::uuid()->toString();
                             try {
-                                app(FacturacionService::class)
-                                    ->crearOActualizarDesdeCierre($record->radicado->fresh(), $resp->fresh());
+                                Log::info("[FACTURA][$errorId] inicio", [
+                                    'radicado_id' => $record->radicado->id,
+                                    'soporte_id'  => $record->id,
+                                    'resp_id'     => $resp->id ?? null,
+                                ]);
+
+                                // Tu servicio: crearDesdeSoporteCierre(Radicado $radicado, Soporte $soporte, RadicadoRespuesta $respuesta)
+                                $svc = app(FacturacionService::class);
+                                $factura = $svc->crearDesdeSoporteCierre(
+                                    $record->radicado->fresh(),   // Radicado
+                                    $record->fresh(),             // Soporte
+                                    $resp->fresh()                // RadicadoRespuesta
+                                );
+
+                                Log::info("[FACTURA][$errorId] ok", [
+                                    'factura_id' => $factura->id ?? null,
+                                    'total'      => $factura->total ?? null,
+                                    'pagado'     => $factura->pagado ?? null,
+                                    'saldo'      => $factura->saldo ?? null,
+                                ]);
                             } catch (\Throwable $e) {
-                                // No romper el flujo del cierre si falla la facturación
-                                report($e);
+                                // ---- NUEVO: mostrar el error real en UI, además del log ----
+                                Log::error("[FACTURA][$errorId] ".$e->getMessage(), [
+                                    'trace'       => $e->getTraceAsString(),
+                                    'radicado_id' => $record->radicado->id ?? null,
+                                    'soporte_id'  => $record->id ?? null,
+                                    'resp_id'     => $resp->id ?? null,
+                                    'user_id'     => Auth::id(),
+                                ]);
+
+                                $msg = trim($e->getMessage() ?: get_class($e));
+                                $first = '';
+                                foreach ($e->getTrace() as $t) {
+                                    if (!empty($t['file']) && !empty($t['line'])) {
+                                        $first = $t['file'].':'.$t['line'];
+                                        break;
+                                    }
+                                }
+
                                 Notification::make()
                                     ->title('Cierre realizado con observación')
-                                    ->body('El cierre fue exitoso, pero hubo un problema creando/actualizando la factura.')
-                                    ->warning()->send();
+                                    ->body("ErrorId: {$errorId}\n\n{$msg}\n\nEn: {$first}")
+                                    ->warning()
+                                    ->persistent()
+                                    ->send();
                             }
                         }
 

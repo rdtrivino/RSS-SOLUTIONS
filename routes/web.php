@@ -10,7 +10,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RadicadoPdfController;
-
+use App\Http\Controllers\FacturaPosController;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Componentes Livewire (páginas internas)
@@ -25,12 +25,22 @@ use App\Livewire\ConsultaTicket;    // /consulta-nit (Consulta de ticket/solicit
 // ─────────────────────────────────────────────────────────────────────────────
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// Formularios/acciones públicas del Home (si los sigues usando)
-Route::post('/contacto/enviar', [ContactController::class, 'submit'])->name('contact.submit');
-Route::get('/tracking', [TrackingController::class, 'lookup'])->name('tracking.lookup');
+Route::post('/contacto/enviar', [ContactController::class, 'submit'])
+    ->name('contact.submit');
+
+Route::get('/tracking', [TrackingController::class, 'lookup'])
+    ->name('tracking.lookup');
+
 Route::get('/pdf/radicado/{radicado}', RadicadoPdfController::class)
-    ->name('radicado.pdf')        // <- ESTE nombre debe existir
-    ->middleware('signed');       // URL firmada
+    ->whereNumber('radicado')
+    ->name('radicado.pdf')       // nombre de la ruta para URL firmada
+    ->middleware('signed');      // exige URL firmada
+
+// Ruta POS protegida con login
+Route::middleware('auth')->group(function () {
+    Route::get('/facturas/{factura}/pos/print', [FacturaPosController::class, 'print'])
+        ->name('facturas.pos.print');
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Área autenticada (Breeze)
@@ -47,11 +57,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/profile', 'destroy')->name('profile.destroy');
     });
 
-    // Páginas internas — ahora con Livewire:
+    // Páginas internas — Livewire
     Route::get('/soporte', SoporteForm::class)->name('soporte.index');
     Route::get('/contacto', ContratanosPage::class)->name('contacto.index');       // "Contrátanos"
     Route::get('/pqr', PqrForm::class)->name('pqr.index');
-    Route::get('/consulta-nit', ConsultaTicket::class)->name('consulta-nit.index'); // Consulta de ticket/solicitud
+    Route::get('/consulta-nit', ConsultaTicket::class)->name('consulta-nit.index');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

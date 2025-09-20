@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Factura extends Model
 {
@@ -25,85 +24,40 @@ class Factura extends Model
         'saldo'    => 'decimal:2',
     ];
 
-    /* ===================== Relaciones ===================== */
+    public function radicado(): BelongsTo { return $this->belongsTo(Radicado::class); }
+    public function items(): HasMany { return $this->hasMany(FacturaItem::class); }
+    public function pagos(): HasMany { return $this->hasMany(FacturaPago::class); }
 
-    public function radicado(): BelongsTo
-    {
-        return $this->belongsTo(Radicado::class);
-    }
+    // Compat: si algún código viejo usa "recalc()"
+    public function recalc(): void { $this->recalcularTotales(); }
 
-    public function items(): HasMany
-    {
-        return $this->hasMany(FacturaItem::class);
-    }
-
-    /**
-     * Pagos 1:N directos (tabla 'pagos' con factura_id).
-     */
-    public function pagos(): HasMany
-    {
-        return $this->hasMany(Pago::class);
-    }
-
-    /**
-     * Pagos N:M vía pivot 'factura_pagos' (cuando un pago se reparte en varias facturas).
-     * Se asume columna pivot: 'valor_aplicado'.
-     */
-    public function pagosPivot(): BelongsToMany
-    {
-        return $this->belongsToMany(Pago::class, 'factura_pagos', 'factura_id', 'pago_id')
-            ->withPivot(['valor_aplicado'])
-            ->withTimestamps();
-    }
-
-    /* ===================== Lógica de totales ===================== */
-
-    /**
-     * Suma pagos aplicados desde ambas fuentes:
-     * - Directos (pagos.valor)
-     * - Pivot (factura_pagos.valor_aplicado)
-     */
-    public function totalPagosAplicados(): float
-    {
-        $directos = (float) $this->pagos()->sum('valor');
-
-        // Suma del campo en la tabla pivot.
-        $pivot = (float) $this->pagosPivot()
-            ->selectRaw('COALESCE(SUM(factura_pagos.valor_aplicado),0) as total')
-            ->value('total');
-
-        return round($directos + $pivot, 2);
-    }
-
-    /**
-     * Recalcula subtotal/iva/total en base a items y saldo en base a pagos (directos + pivot).
-     */
     public function recalcularTotales(): void
     {
-        $subtotal = 0.0;
-        $iva      = 0.0;
-        $total    = 0.0;
+        $subtotal = 0.0; $iva = 0.0; $total = 0.0;
 
-        // Aseguramos items cargados
         $items = $this->relationLoaded('items') ? $this->items : $this->items()->get();
 
         foreach ($items as $it) {
-            $lineaBase = round($it->cantidad * $it->precio_unitario, 2);
-            $lineaIva  = round($lineaBase * ($it->iva_pct / 100), 2);
-            $lineaTot  = round($lineaBase + $lineaIva, 2);
+            $cant  = (float) ($it->cantidad ?? 0);
+            $pu    = (float) ($it->precio_unitario ?? 0);
+            $ivaPc = (float) ($it->iva_pct ?? 0);
 
-            $subtotal += $lineaBase;
-            $iva      += $lineaIva;
-            $total    += $lineaTot;
+            $base = round($cant * $pu, 2);
+            $ivaL = round($base * ($ivaPc / 100), 2);
+            $totL = round($base + $ivaL, 2);
 
-            if ((float) $it->total !== (float) $lineaTot) {
-                $it->total = $lineaTot;
+            $subtotal += $base;
+            $iva      += $ivaL;
+            $total    += $totL;
+
+            if ((float)$it->total !== (float)$totL) {
+                $it->total = $totL;
                 $it->save();
             }
         }
 
-        // Pagos (directos + pivot)
-        $pagado = $this->totalPagosAplicados();
+        // Si tu columna no es "monto" sino "valor", cambia aquí a sum('valor')
+        $pagado = (float) $this->pagos()->sum('monto');
         $saldo  = max(0, round($total - $pagado, 2));
 
         $this->update([
@@ -115,15 +69,46 @@ class Factura extends Model
         ]);
     }
 
-    /**
-     * Genera número con formato FAC-YYYY-######.
-     */
+    // Helpers
+    public static function normalizarMonto($monto): float
+    {
+        if (is_string($monto)) {
+            $norm  = str_replace(['.', ','], ['', '.'], $monto);
+            $monto = is_numeric($norm) ? (float) $norm : 0.0;
+        }
+        return round((float) $monto, 2);
+    }
+
+    public function registrarAnticipo(array $data): array
+    {
+        $monto = self::normalizarMonto($data['monto'] ?? $data['valor'] ?? 0);
+        if ($monto <= 0) throw new \InvalidArgumentException('Monto inválido.');
+
+        $pago = $this->pagos()->create([
+            'user_id'    => $data['user_id'] ?? auth()->id(),
+            'monto'      => $monto,
+            'moneda'     => $data['moneda'] ?? 'COP',
+            'metodo'     => $data['metodo'] ?? 'efectivo',
+            'referencia' => $data['referencia'] ?? null,
+            'fecha_pago' => $data['fecha_pago'] ?? $data['fecha'] ?? now()->toDateString(),
+            'notas'      => $data['notas'] ?? null,
+        ]);
+
+        $this->load(['items','pagos']);
+        $this->recalcularTotales();
+
+        return ['id' => $pago->id];
+    }
+
     public static function generarConsecutivo(): string
     {
         $year = date('Y');
         $lastIdThisYear = static::whereYear('created_at', $year)->max('id');
         $seq  = str_pad((string) (($lastIdThisYear ?? 0) + 1), 6, '0', STR_PAD_LEFT);
-
         return "FAC-{$year}-{$seq}";
     }
+
+    // Compat: si hay código que aún lee/escribe "anticipo"
+    public function getAnticipoAttribute() { return $this->pagado; }
+    public function setAnticipoAttribute($v): void { $this->pagado = $v; }
 }

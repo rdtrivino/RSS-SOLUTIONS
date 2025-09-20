@@ -10,7 +10,6 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -26,20 +25,34 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+
+                        // Branding
+            ->brandName('RSS Solutions')
+            ->brandLogo(asset('images/logo.jpg'))
+            ->favicon(asset('images/logo.png'))    // opcional
+
+            // Color principal del panel
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::hex('#0ea5e9'),
             ])
+
+            // Si tienes un theme propio de Filament, descomenta la siguiente línea
+            // ->viteTheme('resources/css/filament/admin/theme.css')
+
+            // Páginas
+            ->pages([
+                Pages\Dashboard::class, // usaremos una vista personalizada del Dashboard
+            ])
+
+            // Descubrimiento automático
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
-            ->pages([
-                Pages\Dashboard::class,
-            ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-            ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
-            ])
+
+            // SIN widgets por defecto (quitamos los que ves en la captura)
+            // ->widgets([]) // puedes dejarlo así o eliminar la llamada
+
+            // Middlewares
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

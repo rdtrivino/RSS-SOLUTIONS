@@ -7,9 +7,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FacturaItem extends Model
 {
+    protected $table = 'factura_items';
+
     protected $fillable = [
-        'factura_id','producto_servicio_id','concepto',
-        'cantidad','unidad','precio_unitario','iva_pct','total',
+        'factura_id',
+        'producto_servicio_id', // <- opcional según tu catálogo
+        'concepto',
+        'unidad',
+        'cantidad',
+        'precio_unitario',
+        'iva_pct',
+        'total',
     ];
 
     protected $casts = [
@@ -24,8 +32,15 @@ class FacturaItem extends Model
         return $this->belongsTo(Factura::class);
     }
 
-    public function productoServicio(): BelongsTo
+    // (Opcional) relación al catálogo, si tienes App\Models\ProductoServicio
+    public function producto(): BelongsTo
     {
-        return $this->belongsTo(ProductoServicio::class);
+        return $this->belongsTo(\App\Models\ProductoServicio::class, 'producto_servicio_id');
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(fn ($it) => $it->factura?->recalc());
+        static::deleted(fn ($it) => $it->factura?->recalc());
     }
 }

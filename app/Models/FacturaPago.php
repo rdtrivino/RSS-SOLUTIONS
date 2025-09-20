@@ -3,26 +3,27 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FacturaPago extends Model
 {
+    protected $table = 'factura_pagos';
+
     protected $fillable = [
-        'factura_id','user_id','monto','moneda','metodo',
-        'referencia','fecha_pago','notas',
+        'factura_id','user_id','monto','moneda',
+        'metodo','referencia','fecha_pago','notas',
     ];
 
     protected $casts = [
-        'monto'      => 'float',
-        'fecha_pago' => 'date',
+        'monto'      => 'decimal:2',
+        'fecha_pago' => 'date:Y-m-d',
     ];
 
-    public function factura()
-    {
-        return $this->belongsTo(Factura::class);
-    }
+    public function factura(): BelongsTo { return $this->belongsTo(Factura::class); }
 
-    public function user()
+    protected static function booted(): void
     {
-        return $this->belongsTo(User::class);
+        static::saved(fn ($p) => $p->factura?->recalc());
+        static::deleted(fn ($p) => $p->factura?->recalc());
     }
 }
