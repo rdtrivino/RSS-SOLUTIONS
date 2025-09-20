@@ -65,6 +65,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Ruta para descarga de PDF de soporte (forzar descarga)
+// ─────────────────────────────────────────────────────────────────────────────
+use App\Models\Soporte;
+use App\Models\RadicadoRespuesta;
+use Illuminate\Support\Facades\Storage;
+
+Route::get('/soportes/{record}/descargar-pdf', function (Soporte $record) {
+    $ultimaCierre = RadicadoRespuesta::query()
+        ->where('radicado_id', $record->radicado->id)
+        ->where('formato', 'soporte')
+        ->where('cierra_caso', true)
+        ->latest('id')
+        ->first();
+
+    abort_unless($ultimaCierre && $ultimaCierre->pdf_path, 404);
+
+    // Nombre dinámico del archivo
+    $filename = "soporte-radicado-{$record->radicado->id}.pdf";
+
+    return Storage::disk('public')->download($ultimaCierre->pdf_path, $filename);
+})->name('soporte.descargar.pdf');
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Autenticación (Breeze / Fortify / etc.)
 // ─────────────────────────────────────────────────────────────────────────────
 require __DIR__ . '/auth.php';

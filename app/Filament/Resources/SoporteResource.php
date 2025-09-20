@@ -125,17 +125,37 @@ class SoporteResource extends Resource
                         Forms\Components\CheckboxList::make('tareas')
                             ->label('Servicios realizados')
                             ->options([
-                                'diag'           => 'Diagnóstico',
-                                'formateo'       => 'Formateo e instalación de S.O.',
-                                'backup'         => 'Backup de información',
-                                'cambio_bateria' => 'Cambio de batería',
-                                'cambio_disco'   => 'Cambio de disco / SSD',
-                                'limpieza'       => 'Limpieza y mantenimiento',
-                                'inst_software'  => 'Instalación de programas',
-                                'drivers'        => 'Actualización de drivers',
-                                'red'            => 'Reparación de red / internet',
-                                'pantalla'       => 'Cambio de pantalla',
-                                'otros'          => 'Otros (especificar abajo)',
+                                'diag'             => 'Diagnóstico',
+                                'formateo'         => 'Formateo e instalación de S.O.',
+                                'backup'           => 'Backup de información',
+                                'cambio_bateria'   => 'Cambio de batería',
+                                'cambio_disco'     => 'Cambio de disco / SSD',
+                                'limpieza'         => 'Limpieza y mantenimiento',
+                                'inst_software'    => 'Instalación de programas',
+                                'drivers'          => 'Actualización de drivers',
+                                'red'              => 'Reparación de red / internet',
+                                'pantalla'         => 'Cambio de pantalla',
+
+                                // 🔹 Servicios adicionales
+                                'placa'            => 'Reparación de tarjeta madre / placa base',
+                                'teclado'          => 'Cambio de teclado',
+                                'carcasa'          => 'Cambio de bisagras / carcasa',
+                                'ventilador'       => 'Reemplazo de ventilador / sistema de refrigeración',
+                                'ram'              => 'Ampliación de memoria RAM',
+                                'recuperacion'     => 'Recuperación de datos',
+                                'perifericos'      => 'Instalación / configuración de periféricos',
+                                'migracion'        => 'Migración de sistema a otro equipo',
+                                'soporte_remoto'   => 'Soporte remoto',
+                                'contrato'         => 'Contratos de mantenimiento preventivo',
+                                'servidores'       => 'Gestión de servidores y backups',
+                                'correo'           => 'Configuración de correo corporativo',
+                                'seguridad'        => 'Seguridad informática (antivirus, firewall)',
+                                'camaras'          => 'Instalación de cámaras de seguridad',
+                                'capacitacion'     => 'Capacitación básica en software',
+                                'asesoria'         => 'Asesoría en compra y actualización de equipos',
+
+                                // Extra
+                                'otros'            => 'Otros (especificar abajo)',
                             ])
                             ->columns(2)
                             ->live(),
@@ -188,16 +208,34 @@ class SoporteResource extends Resource
 
                         // Map de claves -> nombre catálogo
                         $tareasMap = [
-                            'diag'           => 'Diagnóstico',
-                            'formateo'       => 'Formateo e instalación de S.O.',
-                            'backup'         => 'Backup de información',
-                            'cambio_bateria' => 'Cambio de batería',
-                            'cambio_disco'   => 'Cambio de disco / SSD',
-                            'limpieza'       => 'Limpieza y mantenimiento',
-                            'inst_software'  => 'Instalación de programas',
-                            'drivers'        => 'Actualización de drivers',
-                            'red'            => 'Reparación de red / internet',
-                            'pantalla'       => 'Cambio de pantalla',
+                            'diag'             => 'Diagnóstico',
+                            'formateo'         => 'Formateo e instalación de S.O.',
+                            'backup'           => 'Backup de información',
+                            'cambio_bateria'   => 'Cambio de batería',
+                            'cambio_disco'     => 'Cambio de disco / SSD',
+                            'limpieza'         => 'Limpieza y mantenimiento',
+                            'inst_software'    => 'Instalación de programas',
+                            'drivers'          => 'Actualización de drivers',
+                            'red'              => 'Reparación de red / internet',
+                            'pantalla'         => 'Cambio de pantalla',
+
+                            // 🔹 Servicios adicionales
+                            'placa'            => 'Reparación de tarjeta madre / placa base',
+                            'teclado'          => 'Cambio de teclado',
+                            'carcasa'          => 'Cambio de bisagras / carcasa',
+                            'ventilador'       => 'Reemplazo de ventilador / sistema de refrigeración',
+                            'ram'              => 'Ampliación de memoria RAM',
+                            'recuperacion'     => 'Recuperación de datos',
+                            'perifericos'      => 'Instalación / configuración de impresoras y periféricos',
+                            'migracion'        => 'Migración de sistema a otro equipo',
+                            'soporte_remoto'   => 'Soporte remoto',
+                            'contrato'         => 'Contratos de mantenimiento preventivo',
+                            'servidores'       => 'Gestión de servidores y backups',
+                            'correo'           => 'Configuración de correo corporativo',
+                            'seguridad'        => 'Seguridad informática (antivirus, firewall)',
+                            'camaras'          => 'Instalación de cámaras de seguridad',
+                            'capacitacion'     => 'Capacitación básica en software',
+                            'asesoria'         => 'Asesoría en compra y actualización de equipos',
                         ];
                         $seleccionLabels = array_values(array_intersect_key($tareasMap, array_flip($tareas)));
 
@@ -307,12 +345,11 @@ class SoporteResource extends Resource
                                     'resp_id'     => $resp->id ?? null,
                                 ]);
 
-                                // Tu servicio: crearDesdeSoporteCierre(Radicado $radicado, Soporte $soporte, RadicadoRespuesta $respuesta)
                                 $svc = app(FacturacionService::class);
                                 $factura = $svc->crearDesdeSoporteCierre(
-                                    $record->radicado->fresh(),   // Radicado
-                                    $record->fresh(),             // Soporte
-                                    $resp->fresh()                // RadicadoRespuesta
+                                    $record->radicado->fresh(),
+                                    $record->fresh(),
+                                    $resp->fresh()
                                 );
 
                                 Log::info("[FACTURA][$errorId] ok", [
@@ -322,7 +359,6 @@ class SoporteResource extends Resource
                                     'saldo'      => $factura->saldo ?? null,
                                 ]);
                             } catch (\Throwable $e) {
-                                // ---- NUEVO: mostrar el error real en UI, además del log ----
                                 Log::error("[FACTURA][$errorId] ".$e->getMessage(), [
                                     'trace'       => $e->getTraceAsString(),
                                     'radicado_id' => $record->radicado->id ?? null,
@@ -352,23 +388,14 @@ class SoporteResource extends Resource
                         Notification::make()->title('Estado actualizado')->success()->send();
                     }),
 
+                // ─────────────────────────────────────────────────────────────
+                // DESCARGAR PDF → Forzar descarga por ruta Laravel
+                // ─────────────────────────────────────────────────────────────
                 Action::make('descargar_pdf')
                     ->label('Descargar PDF')
                     ->icon('heroicon-m-arrow-down-tray')
-                    ->url(function (Soporte $record) {
-                        if (! $record->radicado) return null;
-
-                        $ultimaCierre = RadicadoRespuesta::query()
-                            ->where('radicado_id', $record->radicado->id)
-                            ->where('formato', 'soporte')
-                            ->where('cierra_caso', true)
-                            ->latest('id')
-                            ->first();
-
-                        return $ultimaCierre && $ultimaCierre->pdf_path
-                            ? Storage::disk('public')->url($ultimaCierre->pdf_path)
-                            : null;
-                    })
+                    ->url(fn (Soporte $record) => route('soporte.descargar.pdf', $record))
+                    ->openUrlInNewTab(false) // evitar nueva pestaña
                     ->visible(function (Soporte $record) {
                         if (! $record->radicado) return false;
 
@@ -378,8 +405,7 @@ class SoporteResource extends Resource
                             ->where('cierra_caso', true)
                             ->whereNotNull('pdf_path')
                             ->exists();
-                    })
-                    ->openUrlInNewTab(),
+                    }),
             ])
             ->bulkActions([]);
     }
